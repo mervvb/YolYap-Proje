@@ -1,4 +1,4 @@
-# YolYap_Proje – Kurulum & Çalıştırma Kılavuzu
+# YolYap Projesi – Kurulum & Çalıştırma Kılavuzu
 
 Bu proje 3 ana parçadan oluşur:
 
