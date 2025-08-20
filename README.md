@@ -10,7 +10,7 @@ Bu proje 3 ana parçadan oluşur:
 
 ---
 
-## 0) Gereklilikler
+## 1) Gereklilikler
 
 - Node.js 20+ (LTS önerilir)  
 - Python 3.11/3.12 (3.13 uyumsuzluk çıkarabilir)  
@@ -19,7 +19,7 @@ Bu proje 3 ana parçadan oluşur:
 
 ---
 
-## 1) Depoyu Klonla
+## 2) Depoyu Klonla
 
 ```bash
 git clone <SENIN_REPO_URLUN>
