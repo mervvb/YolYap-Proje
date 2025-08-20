@@ -1,0 +1,9 @@
+@keyframes wiggle {
+  0%, 100% { transform: translateY(-110%) rotate(0deg); }
+  25% { transform: translateY(-110%) rotate(-5deg); }
+  75% { transform: translateY(-110%) rotate(5deg); }
+}
+
+.animate-wiggle {
+  animation: wiggle 1.5s ease-in-out infinite;
+}
