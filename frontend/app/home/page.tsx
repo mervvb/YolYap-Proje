@@ -45,6 +45,75 @@ export default function HomePage() {
   const startIconRef = useRef<any>(null)
   const [routeInfo, setRouteInfo] = useState<{ distanceMeters: number; duration: string } | null>(null)
 
+  // --- Global helper & CustomEvent to add places from outside (e.g., Mapbox or other components) ---
+  useEffect(() => {
+    // Global function: window.solviaAddPlace(lat, lng, name?)
+    (window as any).solviaAddPlace = (lat: number, lng: number, name?: string) => {
+      if (!isFinite(lat) || !isFinite(lng)) return;
+      const L: any = (window as any).L;
+      const placeName = name || `Nokta (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+
+      const newPlace: Place = {
+        id: crypto.randomUUID(),
+        name: placeName,
+        lat: Number(lat.toFixed(6)),
+        lng: Number(lng.toFixed(6)),
+      };
+
+      setSelectedPlaces((prev) => [...prev, newPlace]);
+
+      // If Leaflet/map is ready, drop a marker immediately
+      if (L && mapRef.current) {
+        try {
+          const marker = L.marker([newPlace.lat, newPlace.lng], { icon: defaultIconRef.current }).addTo(mapRef.current);
+          marker.bindPopup(`📍 ${newPlace.name}`);
+          markersRef.current[newPlace.id] = marker;
+          setTimeout(() => renumberMarkers(), 0);
+        } catch {}
+      }
+    };
+
+    // CustomEvent usage: window.dispatchEvent(new CustomEvent('solvia:add-place', { detail: { lat, lng, name? } }))
+    const onAdd = (ev: Event) => {
+      const e = ev as CustomEvent<{ lat: number; lng: number; name?: string }>;
+      const { lat, lng, name } = e.detail || ({} as any);
+      if (!isFinite(lat) || !isFinite(lng)) return;
+      (window as any).solviaAddPlace?.(lat, lng, name);
+    };
+
+    window.addEventListener('solvia:add-place', onAdd as EventListener);
+    return () => window.removeEventListener('solvia:add-place', onAdd as EventListener);
+  }, []);
+
+  // Re-number markers whenever places or start changes
+  useEffect(() => {
+    try { renumberMarkers(); } catch {}
+  }, [selectedPlaces, startAnchor, startMarkerId]);
+
+  // Start anchor değiştiğinde marker'ı garanti göster/temizle (map hazır olduğunda da çalışır)
+  useEffect(() => {
+    if (!mapReady) return;
+    if (startAnchor) {
+      try { showAnchorMarker(startAnchor); } catch {}
+      // numaraları tazele (anchor #1, diğerleri 2..N)
+      try { renumberMarkers(); } catch {}
+    } else if (startOnlyMarkerRef.current && mapRef.current) {
+      try { mapRef.current.removeLayer(startOnlyMarkerRef.current); } catch {}
+      startOnlyMarkerRef.current = null;
+      try { renumberMarkers(); } catch {}
+    }
+  }, [startAnchor, mapReady]);
+
+  // Seçim modunda haritada crosshair kursörü göster
+  useEffect(() => {
+    const el = mapEl.current;
+    if (!el) return;
+    try {
+      if (isPickingStart) el.classList.add('cursor-crosshair');
+      else el.classList.remove('cursor-crosshair');
+    } catch {}
+  }, [isPickingStart]);
+
   // --- Marker numaralandırma yardımcıları ---
   function makeNumberedIcon(n: number, isStart = false) {
     const L: any = (window as any).L
@@ -61,6 +130,59 @@ export default function HomePage() {
       iconSize: [20, 20],
       iconAnchor: [10, 10],
     })
+  }
+
+  // component içinde (sende zaten var; şu sürümle değiştir)
+  function showAnchorMarker(a: { lat: number; lng: number }) {
+    const L: any = (window as any).L;
+    const map = mapRef.current;
+    if (!L || !map) return;
+    try {
+      // Harita boyutunu güncelle (ilk render gecikmelerini önler)
+      try { map.invalidateSize(); } catch {}
+
+      if (!startOnlyMarkerRef.current) {
+        startOnlyMarkerRef.current = L.marker([a.lat, a.lng], {
+          icon: makeNumberedIcon(1, true),
+          zIndexOffset: 1000,
+        });
+      } else {
+        startOnlyMarkerRef.current.setLatLng([a.lat, a.lng]);
+        startOnlyMarkerRef.current.setIcon(makeNumberedIcon(1, true));
+        startOnlyMarkerRef.current.setZIndexOffset(1000);
+      }
+
+      // Haritaya gerçekten eklendiğinden emin ol
+      try { if (!map.hasLayer(startOnlyMarkerRef.current)) startOnlyMarkerRef.current.addTo(map); } catch {}
+
+      // Odağı anchor'a kaydır
+      try { map.panTo([a.lat, a.lng], { animate: true }); } catch {}
+    } catch {}
+  }
+
+  // Seçilen lat/lng'yi başlangıç (anchor) yap ve hemen haritada göster
+  function applyStartAnchorFromLatLng(lat: number, lng: number) {
+    const a = { lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)) };
+    setStartMarkerId(null);
+    setStartAnchor(a);
+    setIsPickingStart(false);
+    showAnchorMarker(a);
+    setTimeout(() => renumberMarkers(), 0);
+  }
+
+  // Seçim modunu başlat: bir sonraki harita tıklamasında anchor'ı yerleştir
+  function beginPickStart() {
+    setIsPickingStart(true);
+    const map = mapRef.current;
+    const L: any = (window as any).L;
+    if (!map || !L) return;
+    try {
+      // Bir sonraki tıklamada tek seferlik çalışsın
+      map.once('click', (e: any) => {
+        if (!e || !e.latlng) return;
+        applyStartAnchorFromLatLng(e.latlng.lat, e.latlng.lng);
+      });
+    } catch {}
   }
 
   function renumberMarkers() {
@@ -131,8 +253,7 @@ export default function HomePage() {
           setTimeout(() => resolve(), 300);
         });
       }
-
-      // 2) JSß
+      // 2) JS
       const jsId = 'leaflet-cdn-js'
       if (!(window as any).L) {
         if (!document.getElementById(jsId)) {
@@ -152,6 +273,37 @@ export default function HomePage() {
         }
       }
       return (window as any).L || null
+    }
+
+    // Load Leaflet Control Geocoder (CDN) — Mapbox veya Nominatim provider
+    async function ensureLeafletGeocoderLoaded(): Promise<boolean> {
+      // CSS
+      const cssId = 'leaflet-geocoder-css';
+      if (!document.getElementById(cssId)) {
+        const link = document.createElement('link');
+        link.id = cssId;
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css';
+        document.head.appendChild(link);
+        await new Promise<void>((resolve) => {
+          link.onload = () => resolve();
+          setTimeout(() => resolve(), 200);
+        });
+      }
+
+      // JS
+      const jsId = 'leaflet-geocoder-js';
+      if (!document.getElementById(jsId)) {
+        const script = document.createElement('script');
+        script.id = jsId;
+        script.src = 'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js';
+        document.body.appendChild(script);
+        await new Promise<void>((resolve, reject) => {
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Leaflet Control Geocoder yüklenemedi'));
+        });
+      }
+      return true;
     }
 
     async function init() {
@@ -200,7 +352,7 @@ export default function HomePage() {
                 tileSize: 512,
                 zoomOffset: -1,
                 opacity: 0.9,
-                attribution: '© Mapbox — Trafik verisi'
+                attribution: '© Mapbox'
               }
             )
             traffic.addTo(mapRef.current)
@@ -211,36 +363,147 @@ export default function HomePage() {
           console.warn('[Mapbox Traffic] NEXT_PUBLIC_MAPBOX_TOKEN bulunamadı; trafik katmanı gösterilmeyecek.')
         }
 
+        // Arama kutusu: Özel Mapbox Geocoder (HTTP API) — TR odaklı
+          try {
+            await ensureLeafletGeocoderLoaded();
+            const Lany: any = (window as any).L;
+            // @ts-ignore
+            const Geocoder = Lany?.Control?.Geocoder;
+            if (Geocoder && Lany) {
+              const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN as string | undefined;
+
+              // Control.Geocoder arayüzünü implement eden özel provider (geocode + suggest)
+              const customMapboxProvider = {
+                geocode: async function (query: string, arg2?: any, arg3?: any) {
+                  // Leaflet-Control-Geocoder: geocode(query, cb, context) — cb opsiyonel; yoksa array return etmeliyiz
+                  const cb = typeof arg2 === 'function' ? arg2 : (typeof arg3 === 'function' ? arg3 : null);
+                  const call = (list: any[]) => { try { if (typeof cb === 'function') cb(list); } catch (e) { console.warn('[Geocoder][custom] cb error:', e); } };
+
+                  try {
+                    const text = String(query || '').trim();
+                    if (!text) { const empty: any[] = []; call(empty); return empty; }
+                    const q = encodeURIComponent(text);
+
+                    const ctr = mapRef.current?.getCenter?.();
+                    const proximity = ctr ? `${ctr.lng},${ctr.lat}` : undefined;
+
+                    // Fallback: Nominatim
+                    if (!token) {
+                      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=8&accept-language=tr&countrycodes=tr&q=${q}`;
+                      const r = await fetch(url, { headers: { Accept: 'application/json' } });
+                      const d = await r.json();
+                      const list = Array.isArray(d) ? d.map((f: any) => ({
+                        name: f.display_name,
+                        center: (window as any).L.latLng(parseFloat(f.lat), parseFloat(f.lon)),
+                        bbox: null,
+                      })) : [];
+                      call(list); return list;
+                    }
+
+                    // Mapbox
+                    const params = new URLSearchParams({ access_token: token, limit: '8', language: 'tr', country: 'TR' });
+                    if (proximity) params.set('proximity', proximity);
+                    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json?${params.toString()}`;
+                    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+                    const data = await res.json();
+                    const feats = Array.isArray(data?.features) ? data.features : [];
+                    const list = feats.map((f: any) => ({
+                      name: f.place_name,
+                      center: (window as any).L.latLng(f.center[1], f.center[0]),
+                      bbox: f.bbox ? (window as any).L.latLngBounds([[f.bbox[1], f.bbox[0]], [f.bbox[3], f.bbox[2]]]) : null,
+                    }));
+                    call(list); return list;
+                  } catch (err) {
+                    console.warn('[Geocoder][custom] geocode hata:', err);
+                    const empty: any[] = []; call(empty); return empty;
+                  }
+                },
+
+                suggest: async function (query: string, arg2?: any, arg3?: any) {
+                  // Leaflet-Control-Geocoder: suggest(query, cb, context) — cb opsiyonel; yoksa array return etmeliyiz
+                  const cb = typeof arg2 === 'function' ? arg2 : (typeof arg3 === 'function' ? arg3 : null);
+                  const call = (list: any[]) => { try { if (typeof cb === 'function') cb(list); } catch (e) { console.warn('[Geocoder][custom] suggest cb error:', e); } };
+
+                  try {
+                    const text = String(query || '').trim();
+                    if (!text) { const empty: any[] = []; call(empty); return empty; }
+                    const q = encodeURIComponent(text);
+
+                    const ctr = mapRef.current?.getCenter?.();
+                    const proximity = ctr ? `${ctr.lng},${ctr.lat}` : undefined;
+
+                    // Fallback: Nominatim
+                    if (!token) {
+                      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&accept-language=tr&countrycodes=tr&q=${q}`;
+                      const r = await fetch(url, { headers: { Accept: 'application/json' } });
+                      const d = await r.json();
+                      const list = Array.isArray(d) ? d.map((f: any) => ({
+                        name: f.display_name,
+                        center: (window as any).L.latLng(parseFloat(f.lat), parseFloat(f.lon)),
+                        bbox: null,
+                      })) : [];
+                      call(list); return list;
+                    }
+
+                    // Mapbox
+                    const params = new URLSearchParams({ access_token: token, limit: '5', language: 'tr', country: 'TR', autocomplete: 'true' });
+                    if (proximity) params.set('proximity', proximity);
+                    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json?${params.toString()}`;
+                    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+                    const data = await res.json();
+                    const feats = Array.isArray(data?.features) ? data.features : [];
+                    const list = feats.map((f: any) => ({
+                      name: f.place_name,
+                      center: (window as any).L.latLng(f.center[1], f.center[0]),
+                      bbox: f.bbox ? (window as any).L.latLngBounds([[f.bbox[1], f.bbox[0]], [f.bbox[3], f.bbox[2]]]) : null,
+                    }));
+                    call(list); return list;
+                  } catch (err) {
+                    console.warn('[Geocoder][custom] suggest hata:', err);
+                    const empty: any[] = []; call(empty); return empty;
+                  }
+                },
+              };
+
+              // Arama kontrolünü ekle
+              // @ts-ignore
+              Lany.Control.geocoder({
+                defaultMarkGeocode: false,
+                geocoder: customMapboxProvider,
+                placeholder: 'Yer ara…',
+                errorMessage: 'Sonuç yok',
+                suggestMinLength: 2,
+                collapsed: false,
+              })
+                .on('markgeocode', (e: any) => {
+                  try {
+                    const g = e?.geocode;
+                    const center = g?.center; // L.LatLng
+                    const name = g?.name || 'Seçilen yer';
+                    if (!center) return;
+                    try { mapRef.current.setView(center, 14); } catch {}
+                    try { (window as any).solviaAddPlace?.(center.lat, center.lng, name); } catch {}
+                  } catch {}
+                })
+                .addTo(mapRef.current);
+
+              console.info('[Geocoder] provider: custom-mapbox', token ? '(token OK)' : '(fallback: nominatim)');
+            } else {
+              console.warn('[Geocoder] Plugin global bulunamadı');
+            }
+          } catch (e) {
+            console.warn('[Geocoder] Eklenemedi:', e);
+          }
+
+        
+
         // Tıklama → yer ekle (seçilebilir harita)
         mapRef.current.on('click', (e: any) => {
           const picking = isPickingStartRef.current
           if (picking) {
-            const { lat, lng } = e.latlng
-            const a = { lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)) }
-
-            // Manuel başlangıç (anchor) ayarla ve listedeki başlangıç seçimini sıfırla
-            setStartMarkerId(null)
-            setStartAnchor(a)
-            setIsPickingStart(false)
-
-            // Anında ekranda göster: kırmızı #1
-            try {
-              if (!startOnlyMarkerRef.current) {
-                startOnlyMarkerRef.current = L.marker([a.lat, a.lng], {
-                  icon: makeNumberedIcon(1, true),
-                  zIndexOffset: 1000, // üstte kalsın
-                }).addTo(mapRef.current)
-              } else {
-                startOnlyMarkerRef.current.setLatLng([a.lat, a.lng])
-                startOnlyMarkerRef.current.setIcon(makeNumberedIcon(1, true))
-                startOnlyMarkerRef.current.setZIndexOffset(1000)
-              }
-              mapRef.current.panTo([a.lat, a.lng]) // isteğe bağlı odak
-            } catch {}
-
-            // Diğer marker’ları 2..N numarala
-            setTimeout(() => renumberMarkers(), 0)
-            return
+            const { lat, lng } = e.latlng;
+            applyStartAnchorFromLatLng(lat, lng);
+            return;
           }
 
           // Normal mod: tıklanan noktayı seçilen yerlere ekle
@@ -370,12 +633,42 @@ export default function HomePage() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const a = { lat: Number(pos.coords.latitude.toFixed(6)), lng: Number(pos.coords.longitude.toFixed(6)) }
-        setStartAnchor(a)
+        setStartMarkerId(null)          // liste başlangıcını sıfırla
+        setStartAnchor(a)               // state'i güncelle
+        showAnchorMarker(a)             // hemen haritaya koy
+        setTimeout(() => renumberMarkers(), 0)
         alert('Başlangıç noktası konumunuza ayarlandı.')
       },
       (err) => alert('Konum alınamadı: ' + err.message),
       { enableHighAccuracy: true, timeout: 8000 }
     )
+  }
+
+  // Helper: POST to /plan or /plan/plan, fallback if 404
+  async function postPlanSmart(body: any) {
+    const endpoints = ['/plan', '/plan/plan'];
+    let lastError: { status?: number; text?: string; url?: string } = {};
+    for (const ep of endpoints) {
+      try {
+        const res = await apiFetch(ep, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (res.ok) return { res, tried: ep };
+        const text = await res.text().catch(() => '');
+        lastError = { status: res.status, text, url: `${API_BASE}${ep}` };
+        // if 404, try next endpoint; other statuses break immediately
+        if (res.status !== 404) break;
+      } catch (e) {
+        lastError = { text: String((e as any)?.message || e), url: `${API_BASE}${ep}` };
+      }
+    }
+    throw new Error(
+      `Plan endpoint bulunamadı/ulaşılamadı. Son denenen: ${lastError.url || '-'}\n` +
+      (lastError.status ? `Status: ${lastError.status}\n` : '') +
+      (lastError.text ? `Yanıt: ${String(lastError.text).slice(0,200)}` : '')
+    );
   }
 
   async function handleBuildRoute() {
@@ -406,12 +699,11 @@ export default function HomePage() {
     const timeBudgetMin = timeBudget
 
     let res: Response
+    let usedEp = ''
     try {
-      res = await apiFetch('/plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ places, timeBudgetMin, anchor: startAnchor || null }),
-      });
+      const out = await postPlanSmart({ places, timeBudgetMin, anchor: startAnchor || null })
+      res = out.res
+      usedEp = out.tried
     } catch (e: any) {
       console.error('İstek atılamadı:', e)
       setIsPlanning(false)
@@ -425,10 +717,11 @@ export default function HomePage() {
     if (!res.ok) {
       console.error('Planlama hatası (raw):', raw)
       setIsPlanning(false)
-      // JSON ise error çıkar, değilse ham gövdeyi göster
       try { data = raw ? JSON.parse(raw) : null } catch {}
-      const msg = data?.error || `Sunucu hatası (status ${res.status}).\n${raw?.slice(0,200)}`
-      return alert(`Rota alınamadı: ${msg}`)
+      const detail = data?.detail || data?.error || data?.message || data?.title
+      const baseMsg = detail ? String(detail) : `Sunucu hatası (status ${res.status}).\n${raw?.slice(0,200)}`
+      const url = `${API_BASE}${usedEp || '/plan'}`
+      return alert(`Rota alınamadı: ${baseMsg}\nURL: ${url}`)
     }
 
     try { data = raw ? JSON.parse(raw) : {} } catch (e) {
@@ -436,6 +729,8 @@ export default function HomePage() {
       setIsPlanning(false)
       return alert(`Beklenmedik yanıt (JSON değil). Sunucu cevabı: ${raw?.slice(0,200)}`)
     }
+    // UX: log which endpoint worked
+    console.info('[plan] endpoint kullanıldı:', `${API_BASE}${usedEp}`)
 
     // Listeyi en iyi sıraya göre güncelle (order, listBefore indekslerine göre)
     if (Array.isArray(data.order)) {
@@ -534,17 +829,11 @@ export default function HomePage() {
           {/* MAP AREA */}
           <div className="relative h-[420px] md:h-[520px] rounded-2xl overflow-hidden border border-gray-200 shadow-md bg-white">
             {/* Gerçek harita container (Leaflet CDN ile) */}
-            <div ref={mapEl} className="absolute inset-0 [min-height:420px]" aria-label="Harita" />
-
-            {/* Üst bilgi */}
-            <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3 pointer-events-none">
-              <span className="rounded-full bg-white/90 px-3 py-1 text-xs text-gray-700 shadow">
-                Haritaya tıkla → isim ver → listede birikir
-              </span>
-              <span className="rounded-full bg-white/90 px-3 py-1 text-xs text-gray-700 shadow">
-                {mapReady ? 'Seçilebilir harita aktif' : 'Harita yükleniyor…'}
-              </span>
-            </div>
+            <div
+              ref={mapEl}
+              className="absolute inset-0 [min-height:420px] z-0 cursor-default"
+              aria-label="Harita"
+            /> 
           </div>
 
           {/* SELECTED PLACES LIST */}
@@ -560,7 +849,20 @@ export default function HomePage() {
                 {/* Başlangıcı haritadan seç */}
                 <div className="relative group">
                   <button
-                    onClick={() => setIsPickingStart(v => !v)}
+                    onClick={() => {
+                      if (isPickingStart) {
+                        // seçim modundan çık
+                        setIsPickingStart(false);
+                        return;
+                      }
+                      // seçim modunu başlat ve bir sonraki tıklamada anchor'ı yerleştir
+                      beginPickStart();
+                      // Görsel ipucu: mevcut anchor varsa hemen göster (kullanıcıya #1 konumu konseptini hatırlatır)
+                      if (startAnchor) {
+                        try { showAnchorMarker(startAnchor); } catch {}
+                        try { renumberMarkers(); } catch {}
+                      }
+                    }}
                     className={`h-8 w-8 inline-flex items-center justify-center rounded-md border transition ${
                       isPickingStart ? 'border-indigo-500 text-indigo-600 bg-indigo-50' : 'border-gray-200 text-gray-700 hover:border-gray-300'
                     }`}
@@ -789,7 +1091,7 @@ export default function HomePage() {
             </div>
             <div className="bg-white rounded-2xl p-6 shadow-md">
               <h4 className="text-xl font-semibold mb-2">Herkese Uygun Rotalar</h4>
-              <p className="text-gray-700">Rampalı yollar, asansörlü binalar, engelli bireylere uygun mekanları dikkate alan rotalar sunarız.</p>
+              <p className="text-gray-700">Rampalı yollar, asansörlü binalar, kullanıcıya uygun mekanları dikkate alan rotalar sunarız.</p>
             </div>
             <div className="bg-white rounded-2xl p-6 shadow-md">
               <h4 className="text-xl font-semibold mb-2">Kişisel Görünüm Seçenekleri</h4>
