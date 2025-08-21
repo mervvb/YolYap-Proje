@@ -4,7 +4,7 @@ Bu proje 3 ana parçadan oluşur:
 
 - **frontend/** → Next.js (Harita + UI + Chat)  
 - **backend/** → FastAPI (Rota planlama, AI/LLM, MCP proxy)  
-- **backend/mcp-bridge/** → THY MCP Bridge (SSE ile MCP’ye bağlanır, login akışını yönetir)
+- **backend/mcp-bridge/** → THY MCP Bridge (SSE ile MCP’ye bağlanır)
 
 > Tavsiye edilen sürümler: **Node 20+**, **Python 3.11/3.12**, **npm** (veya pnpm/yarn), **Mapbox public token**, **OpenAI API key**.
 
