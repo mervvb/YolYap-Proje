@@ -198,15 +198,6 @@ BACKEND_BASE_URL=http://127.0.0.1:8080
 
 ---
 
-## Sorun Giderme
-- **Login olmadan MCP çağrısı** → `401/403` görebilirsiniz. Önce `http://127.0.0.1:9090/thy/login` ile giriş yapın.
-- **Bridge çalışmıyor** → `npm run dev` çıktılarını kontrol edin, port 9090 boş mu?
-- **LLM “Bu bilgi elimde yok” diyor** → Backend `useMcp: true` ve doğru `tool/params` aldığından emin olun. Parametre eksikse LLM’in netleştirmesi gerekir.
-- **CORS hatası** → Backend `.env` içinde `CORS_ALLOW_ORIGINS` değerini doğrulayın.
-- **Bağlantı sorunu** → Kurumsal ağlarda SSE engelli olabilir; farklı ağ deneyin.
-
----
-
 ## Yararlı Linkler
 - THY MCP SSE: **https://mcp.turkishtechlab.com/sse**
 - Türk Hava Yolları Dijital Lab (iletişim): `digitallab@thy.com`
@@ -214,9 +205,5 @@ BACKEND_BASE_URL=http://127.0.0.1:8080
 
 ---
 
-## Hızlı Kontrol Listesi
-- [ ] `backend/mcp-bridge` çalışıyor ve 9090’da dinliyor.
-- [ ] `http://127.0.0.1:9090/thy/login` ile giriş yapıldı (Miles&Smiles).
-- [ ] `backend` çalışıyor (8080) ve `OPENAI_API_KEY` tanımlı.
-- [ ] `frontend` çalışıyor (3000) ve `NEXT_PUBLIC_MCP_BRIDGE` doğru.
-- [ ] LLM çağrılarında `useMcp: true` ve doğru `tool/params` gönderiliyor.
+
+
