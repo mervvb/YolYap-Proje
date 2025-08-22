@@ -28,17 +28,11 @@
     
 8.  Faydalı Komutlar
     
-9.  Sorun Giderme
+9.  Geliştirme ve Katkı
     
-10.  Geliştirme ve Katkı
+10.  Örnek .gitignore
     
-11.  Örnek .gitignore
-    
-12.  Docker ile Çalıştırma (Opsiyonel)
-    
-13.  Dağıtım / Deploy Notları (Opsiyonel)
-    
-14.  Lisans
+
     
 
 **🚀 Proje Hakkında**
