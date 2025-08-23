@@ -83,7 +83,7 @@ npm run dev  → http://localhost:3000
 
 .env.local dosyası:
 
-NEXT\_PUBLIC\_BACKEND\_URL=http://localhost:8000
+NEXT\_PUBLIC\_BACKEND\_URL=http://localhost:8080
 
 NEXT\_PUBLIC\_MAPBOX\_TOKEN=
 
@@ -97,7 +97,7 @@ source .venv/bin/activate  (Windows: .venv\\Scripts\\activate)
 
 pip install -r requirements.txt
 
-uvicorn app.main:app –reload –port 8000  → http://localhost:8000/docs
+uvicorn app.main:app –reload –port 8080  → http://localhost:8080/docs
 
 .env dosyası:
 
@@ -202,7 +202,7 @@ source .venv/bin/activate
 
 pip install -r requirements.txt
 
-uvicorn app.main:app –reload –port 8000
+uvicorn app.main:app –reload –port 8080
 
 MCP Bridge:
 
