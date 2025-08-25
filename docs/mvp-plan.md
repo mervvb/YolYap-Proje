@@ -1,52 +1,49 @@
-# MVP Planı
+# MVP Plan
 
-## 1) Amaç & Vizyon
-- Projenin temel amacı, kullanıcıların ihtiyaçlarını hızlı ve etkili şekilde karşılayan bir ürün geliştirmektir.
-- Vizyonumuz, kullanıcı deneyimini ön planda tutarak, kolay erişilebilir ve sürdürülebilir bir çözüm sunmaktır.
-- Hedefimiz, minimum kaynakla maksimum fayda sağlamak ve pazarda rekabetçi bir konuma gelmektir.
-- Kullanıcıların günlük hayatlarını kolaylaştıran, basit ama güçlü bir araç yaratmak.
-- Geri bildirimlere açık, sürekli geliştirmeye uygun bir yapı kurmak.
+## 1) Purpose & Vision
+- The main goal is to develop a product that quickly and effectively meets user needs.
+- Our vision is to deliver an accessible and sustainable solution with a strong focus on user experience.
+- Aim to achieve maximum value with minimum resources and maintain a competitive market position.
+- Create a simple yet powerful tool that makes daily life easier.
+- Establish a structure that is open to feedback and continuous improvement.
 
-## 2) Özellikler
+## 2) Features
 
-### Temel Özellikler
-- Kullanıcı kaydı ve giriş sistemi (e-posta ve sosyal medya entegrasyonu).
-- Ana fonksiyonun çalıştığı temel modül (örneğin, yol haritası oluşturma, görev yönetimi vs.).
-- Basit ve kullanıcı dostu arayüz.
-- Veri kaydetme ve geri çağırma mekanizması.
-- Bildirim sistemi (e-posta veya uygulama içi).
-- Temel güvenlik önlemleri (şifreleme, yetkilendirme).
+### Core Features
+- User registration and login system (email and social media integration).
+- Main functional module (e.g., route planning, task management).
+- Simple and user-friendly interface.
+- Data saving and retrieval mechanism.
+- Basic security measures (encryption, authorization).
 
-### Ekstra Özellikler
-- Gelişmiş kullanıcı profili yönetimi.
-- Çoklu dil desteği.
-- Analitik ve raporlama modülü.
-- Entegrasyonlar (üçüncü parti API’lar, harita servisleri vb.).
-- Gerçek zamanlı iş birliği ve paylaşım özellikleri.
-- Mobil uyumlu tasarım ve uygulama bildirimleri.
+### Extra Features
+- Advanced user profile management.
+- Multi-language support.
+- Analytics and reporting module.
+- Integrations (third-party APIs, map services, etc.).
+- Real-time collaboration and sharing.
+- Mobile-friendly design and app notifications (in development).
 
-## 3) Kullanıcı Akışı
-- Kullanıcı siteye/app’e giriş yapar veya kayıt olur.
-- Ana sayfada temel fonksiyonları görür ve kullanmaya başlar.
-- Görev veya yol haritası oluşturur, düzenler ve kaydeder.
-- Bildirimler aracılığıyla güncellemelerden haberdar olur.
-- Gelişmiş özelliklere ihtiyaç duyarsa profil ayarlarından erişim sağlar.
-- Destek veya yardım almak istediğinde iletişim kanallarını kullanır.
+## 3) User Flow
+- User signs up or logs in to the site/app.
+- On the homepage, they access core functionalities.
+- User creates, edits, and saves a task or route plan.
+- Advanced features can be accessed from profile settings.
+- Support channels are available when help is needed.
 
-## 4) Teknik Mimarisi
+## 4) Technical Architecture
 
 - **Frontend:** Next.js 14 (App Router), Tailwind CSS, React Query, Leaflet / Mapbox
 - **Backend:** FastAPI (Python), MCP Bridge (Node.js + Express)
-- **Veritabanı:** PostgreSQL
-- **AI/LLM:** OpenAI API (text-to-text), opsiyonel THY MCP entegrasyonu
-- **Authentication:** JWT + Session (Miles&Smiles entegrasyonu için)
-- **Diğer:** GitHub, CI/CD GitHub Actions, dotenv ile config yönetimi, Sentry hata takibi
+- **AI/LLM:** OpenAI API (text-to-text), optional THY MCP integration
+- **Authentication:** JWT + Session 
 
-## 6) Başarı Kriterleri
-- MVP’nin belirlenen temel fonksiyonları sorunsuz çalıştırması.
-- Kullanıcıların kayıt ve giriş işlemlerini kolayca tamamlayabilmesi.
-- Kullanıcı deneyiminin olumlu geri bildirimlerle desteklenmesi.
-- Performansın kabul edilebilir seviyede olması (yüklenme süreleri, hata oranları).
-- İlk kullanıcı kitlesinden düzenli geri dönüşler alınması.
-- Belirlenen zaman çizelgesine uyulması ve kritik hataların minimumda tutulması.
-- Ürünün kolay genişletilebilir ve sürdürülebilir bir yapıda olması.
+## 6) Success Criteria
+- MVP’s core functionalities work without major issues.
+- Users can easily complete registration and login.
+- Positive feedback on overall user experience.
+- Performance meets acceptable levels (loading times, error rates).
+- Regular feedback collected from the first user base.
+- Project timeline is followed, with critical bugs kept minimal.
+- Product remains scalable and sustainable for future growth.
+
