@@ -27,7 +27,7 @@ def health():
     return {"ok": True}
 
 # Rotalar
-app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(auth_router)
 app.include_router(ai_router, prefix="/ai", tags=["ai"])
 app.include_router(mcp_router, prefix="/mcp", tags=["mcp"])
 app.include_router(matrix_router, prefix="/traffic", tags=["traffic"])
