@@ -6,9 +6,7 @@
 ---
 
 ## 🎯 Purpose
-This document explains in detail the usage and integration of the LLM (Large Language Model)-based AI assistant within the **YolYap Project**.  
-
-The main goal is to allow users to interact in **natural language** and quickly obtain accurate information about road conditions, traffic, flight data, and other relevant details.  
+This document explains in detail the usage and integration of the LLM (Large Language Model)-based AI assistant within the **YolYap Project**.   
 
 The AI assistant processes text-based inputs to enhance the user experience. It is designed not only to answer traffic and route questions but also to provide historical and cultural information, helping users learn about the places they are interested in.  
 
@@ -126,3 +124,4 @@ After a function call, the LLM returns a structured response like this:
 ---
 
 📖 This document provides a comprehensive explanation of LLM usage in the **YolYap Project** and serves as a guide for new developers joining the project.  
+
