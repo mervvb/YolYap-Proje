@@ -71,7 +71,7 @@ Backend ayrıca OpenAI API ile konuşur, Frontend Mapbox API ile harita servisle
 
 git clone
 
-cd YolYap\_Proje
+cd YolYap\-Proje
 
 ### **2) Frontend (Next.js)**
 
