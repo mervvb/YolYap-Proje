@@ -100,7 +100,6 @@ After a function call, the LLM returns a structured response like this:
 - The user is provided with traffic density and alternative route suggestions.  
 
 
-
 ### 2. Flight Status Query
 
 **User:** "What time does Turkish Airlines flight TK123 depart?"
@@ -109,7 +108,6 @@ After a function call, the LLM returns a structured response like this:
 - The LLM calls the `get_flight_status` function.  
 - Flight data is retrieved from the **THY MCP API**.  
 - The user is informed about the departure time and current flight status.  
-
 
 
 ### 3. Voice Command Query (In Development)
@@ -122,6 +120,7 @@ After a function call, the LLM returns a structured response like this:
 - The response is then synthesized into speech and delivered to the user.  
 
 
+---
 
 ## Future Enhancements
 
@@ -132,12 +131,6 @@ After a function call, the LLM returns a structured response like this:
 - **Extended Function Calls:** Integration with new data sources and services.  
 
 
+---
 
 📖 This document provides a comprehensive explanation of LLM usage in the **YolYap Project** and serves as a guide for new developers joining the project.  
-
-
-
-
-
-
-
