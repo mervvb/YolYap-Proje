@@ -64,7 +64,8 @@ Function calls follow **JSON format**:
 
 
 
-### Functions:
+###  Functions:
+
 - **get_traffic_info:** Returns traffic status for the specified location and time.  
 - **get_flight_status:** Provides flight information based on flight number or date.  
 - **convert_speech_to_text:** Converts a voice command into text (In Development).  
@@ -73,9 +74,10 @@ Function calls follow **JSON format**:
 
 
 ### Response Format:
+
 After a function call, the LLM returns a structured response like this:
 
-```json
+-json
 
 {
   "response_text": "At 08:00 in Istanbul, traffic density is at 75%, with slowdowns observed on major roads.",
@@ -89,6 +91,7 @@ After a function call, the LLM returns a structured response like this:
 # Example Usage Scenarios
 
 ### 1. Traffic Information Query
+
 **User:** "What’s the traffic like in Istanbul right now?"
 
 **System:**
@@ -99,6 +102,7 @@ After a function call, the LLM returns a structured response like this:
 
 
 ### 2. Flight Status Query
+
 **User:** "What time does Turkish Airlines flight TK123 depart?"
 
 **System:**
@@ -109,6 +113,7 @@ After a function call, the LLM returns a structured response like this:
 
 
 ### 3. Voice Command Query (In Development)
+
 **User (Voice):** "What’s the road situation to Ankara today?"
 
 **System:**
@@ -119,6 +124,7 @@ After a function call, the LLM returns a structured response like this:
 
 
 ## Future Enhancements
+
 - **Multilingual Support:** Extend support beyond Turkish to other languages.  
 - **Advanced Speech Processing:** Improved noise cancellation and more natural speech synthesis.  
 - **Learning Models:** LLM continuously updated through user feedback.  
@@ -128,6 +134,7 @@ After a function call, the LLM returns a structured response like this:
 
 
 📖 This document provides a comprehensive explanation of LLM usage in the **YolYap Project** and serves as a guide for new developers joining the project.  
+
 
 
 
