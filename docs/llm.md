@@ -1,38 +1,60 @@
 
 # 👀Rotalist
 
-## LLM (AI Asistan) Kullanımı Dokümantasyonu
+## LLM (AI Assistant) Usage Documentation 
 
-## Amaç
-Bu doküman, YolYap Projesi kapsamında kullanılan LLM (Large Language Model) tabanlı AI asistanının kullanımını ve entegrasyonunu detaylı şekilde açıklamaktadır. Projenin amacı, kullanıcıların doğal dil ile etkileşim kurarak yol durumu, trafik bilgisi, uçuş verileri ve diğer ilgili bilgiler hakkında hızlı ve doğru bilgi almasını sağlamaktır. AI asistan, metin  tabanlı girdileri işleyerek kullanıcı deneyimini artırmayı hedefler. Asistan, sadece trafik ve rota bilgileriyle sınırlı kalmayıp, aynı zamanda tarihi ve kültürel bilgiler hakkında da cevap verecek şekilde tasarlanmıştır; böylece kullanıcıların merak ettikleri yerleri öğrenmelerine yardımcı olur. Ayrıca, kullanıcı arayüzünde hazır promptlar (kısa hazır sorular/istekler) bulunmakta olup, kullanıcılar bu hazır seçenekleri kolayca seçerek hızlıca bilgi alabilir veya rota oluşturabilirler.
+---
 
-## Mimari
-YolYap Projesindeki LLM mimarisi, farklı veri kaynaklarından gelen bilgileri entegre eden ve kullanıcı isteklerine yanıt veren modüler bir yapıya sahiptir. Temel bileşenler şunlardır:
+## 🎯 Purpose
+This document explains in detail the usage and integration of the LLM (Large Language Model)-based AI assistant within the **YolYap Project**.  
 
-- **Kullanıcı Arayüzü (UI):** Metin girişlerini alır, yanıtları gösterir.
-- **LLM Motoru:** OpenAI tabanlı text-to-text modelini kullanarak doğal dil işleme yapar.
-- **Harita ve Trafik Entegrasyonu:** Mapbox API'si üzerinden gerçek zamanlı trafik verilerini alır.
-- **Uçuş Verisi Entegrasyonu:** Türk Hava Yolları MCP sistemi ile uçuş bilgilerini sorgular.
-- **Fonksiyon Çağrıları Modülü:** LLM tarafından tetiklenen fonksiyon çağrıları ile dış sistemlerle etkileşim sağlar.
+The main goal is to allow users to interact in **natural language** and quickly obtain accurate information about road conditions, traffic, flight data, and other relevant details.  
 
-## Kullanılan Modeller
-- **OpenAI Text-to-Text Modeli:** Kullanıcı sorgularını anlamak ve doğal dilde yanıtlar üretmek için kullanılır.
-- **Ses Tanıma ve Sentez Modülleri:** Google Speech-to-Text ve Text-to-Speech API’leri veya benzeri teknolojilerle sesli komut ve yanıt desteği sağlanır (Gelişim Aşamasında).
-- **Mapbox Trafik Verisi:** Gerçek zamanlı yol ve trafik durumu bilgisi için kullanılır.
-- **THY MCP Entegrasyonu:** Uçuş durumları, kalkış-varış bilgileri gibi THY'ye ait veriler LLM tarafından erişilebilir.
+The AI assistant processes text-based inputs to enhance the user experience. It is designed not only to answer traffic and route questions but also to provide historical and cultural information, helping users learn about the places they are interested in.  
 
-## Entegrasyon Yapısı
-1. Kullanıcı arayüzünden metin komutu alınır.
-3. Metin, OpenAI LLM modeline gönderilir.
-4. LLM, gelen sorguyu analiz ederek gerekirse fonksiyon çağrısı yapar.
-5. Fonksiyon çağrısı ile Mapbox veya THY MCP API’lerinden ilgili veriler çekilir.
-6. Alınan veriler LLM tarafından işlenir ve kullanıcıya uygun yanıt oluşturulur.
-7. Yanıt metin olarak kullanıcıya iletilir.
+Additionally, the user interface includes **ready prompts** (short predefined questions/requests), enabling users to quickly get information or create routes with one click.  
 
-## Fonksiyon Çağrıları (Function Calling)
-LLM, kullanıcı sorgusuna bağlı olarak belirli fonksiyonları çağırabilir. Fonksiyon çağrıları JSON formatında yapılır ve aşağıdaki yapıyı takip eder:
+---
 
-### Fonksiyon Çağrısı Örneği:
+
+## 🏗️ Architecture
+The LLM architecture in the YolYap Project is modular and integrates information from multiple data sources to respond to user requests.  
+
+**Core Components**:  
+- **User Interface (UI):** Collects text input and displays responses.  
+- **LLM Engine:** OpenAI-based text-to-text model for natural language processing.  
+- **Map & Traffic Integration:** Fetches real-time traffic data via the Mapbox API.  
+- **Flight Data Integration:** Queries flight information from Turkish Airlines MCP system.  
+- **Function Calling Module:** Handles external API interactions triggered by the LLM.  
+
+---
+
+## 🤖 Models Used
+- **OpenAI Text-to-Text Model:** For understanding user queries and generating natural language responses.  
+- **Speech Recognition & Synthesis Modules:** Google Speech-to-Text and Text-to-Speech APIs (or similar) for voice input/output (in development).  
+- **Mapbox Traffic Data:** Provides real-time traffic and road condition information.  
+- **THY MCP Integration:** Enables access to Turkish Airlines data (flight status, departure/arrival info).  
+
+---
+
+## 🔗 Integration Flow
+1. User enters a text command via the interface.  
+2. The text is sent to the **OpenAI LLM model**.  
+3. The LLM analyzes the request and triggers **function calls** if necessary.  
+4. External APIs (Mapbox or THY MCP) are queried.  
+5. Data is processed by the LLM.  
+6. The assistant generates a final **text response**.  
+7. The response is displayed (or spoken) to the user.  
+
+---
+
+
+## ⚙️ Function Calling
+
+LLM can call specific functions depending on the query.  
+Function calls follow **JSON format**:  
+
+**Example:**
 ```json
 {
   "name": "get_traffic_info",
@@ -41,60 +63,66 @@ LLM, kullanıcı sorgusuna bağlı olarak belirli fonksiyonları çağırabilir.
     "time": "2024-06-01T08:00:00Z"
   }
 }
-```
 
-### Fonksiyonlar:
-- **get_traffic_info:** Belirtilen lokasyon ve zaman için trafik durumu bilgisi döner.
-- **get_flight_status:** Uçuş numarası veya tarih bazında uçuş bilgilerini sağlar.
-- **convert_speech_to_text:** Sesli komutu metne dönüştürür (Gelişim Aşamasında).
-- **convert_text_to_speech:** Metin yanıtını sesli hale getirir (Gelişim Aşamasında).
-
-### Yanıt Formatı:
-Fonksiyon çağrısı sonrası LLM, aşağıdaki gibi yapılandırılmış bir yanıt döner:
-
-```json
-{
-  "response_text": "İstanbul'da saat 08:00'de trafik yoğunluğu %75 seviyesinde olup, ana yollar üzerinde yavaşlamalar yaşanmaktadır.",
-  "data": {
-    "traffic_level": "high",
-    "affected_roads": ["E-5", "TEM Otoyolu"]
-  }
-}
-```
-
-## Örnek Kullanım Senaryoları
-
-### 1. Trafik Bilgisi Sorgulama
-**Kullanıcı:** "İstanbul'daki trafik durumu nasıl?"
-
-**Sistem:**
-- LLM, `get_traffic_info` fonksiyonunu çağırır.
-- Mapbox API’den trafik verisi alınır.
-- Kullanıcıya trafik yoğunluğu ve alternatif güzergah önerileri sunulur.
-
-### 2. Uçuş Durumu Sorgulama
-**Kullanıcı:** "THY TK123 seferinin kalkış saati nedir?"
-
-**Sistem:**
-- LLM, `get_flight_status` fonksiyonunu çağırır.
-- THY MCP API’den uçuş bilgisi alınır.
-- Kullanıcıya uçuşun kalkış saati ve güncel durumu bildirilir.
-
-### 3. Sesli Komut ile Sorgu (Gelişim Aşamasında)
-**Kullanıcı (Sesli):** "Bugün Ankara'ya giden yollar nasıl?"
-
-**Sistem:**
-- Ses tanıma modülü komutu metne çevirir.
-- LLM ilgili fonksiyonları çağırarak yanıt oluşturur.
-- Yanıt ses sentezi ile kullanıcıya sesli olarak iletilir.
-
-## Gelecek Geliştirmeler
-- **Çok Dilli Destek:** Türkçe dışındaki diller için destek genişletilecek.
-- **Daha Gelişmiş Ses İşleme:** Gürültü engelleme ve doğal ses sentezi iyileştirilecek.
-- **Öğrenen Modeller:** Kullanıcı geri bildirimleri ile LLM modelleri sürekli güncellenecek.
-- **Gerçek Zamanlı Uyarılar:** Trafik kazaları ve acil durumlar için anlık bildirim sistemi entegre edilecek.
-- **Genişletilmiş Fonksiyon Çağrıları:** Yeni veri kaynakları ve hizmetler için fonksiyonlar eklenecek.
+### Functions:
+- **get_traffic_info:** Returns traffic status for the specified location and time.  
+- **get_flight_status:** Provides flight information based on flight number or date.  
+- **convert_speech_to_text:** Converts a voice command into text (In Development).  
+- **convert_text_to_speech:** Converts a text response into speech (In Development).  
 
 ---
 
-Bu doküman, YolYap Projesinin LLM kullanımını kapsamlı şekilde açıklamakta ve projeye yeni katılan geliştiriciler için rehber niteliğindedir.
+### Response Format:
+After a function call, the LLM returns a structured response like this:
+
+```json
+{
+  "response_text": "At 08:00 in Istanbul, traffic density is at 75%, with slowdowns observed on major roads.",
+  "data": {
+    "traffic_level": "high",
+    "affected_roads": ["E-5", "TEM Highway"]
+  }
+}
+
+# Example Usage Scenarios
+
+### 1. Traffic Information Query
+**User:** "What’s the traffic like in Istanbul right now?"
+
+**System:**
+- The LLM calls the `get_traffic_info` function.  
+- Traffic data is retrieved from the **Mapbox API**.  
+- The user is provided with traffic density and alternative route suggestions.  
+
+---
+
+### 2. Flight Status Query
+**User:** "What time does Turkish Airlines flight TK123 depart?"
+
+**System:**
+- The LLM calls the `get_flight_status` function.  
+- Flight data is retrieved from the **THY MCP API**.  
+- The user is informed about the departure time and current flight status.  
+
+---
+
+### 3. Voice Command Query (In Development)
+**User (Voice):** "What’s the road situation to Ankara today?"
+
+**System:**
+- The speech recognition module converts the voice command into text.  
+- The LLM processes the query and calls the appropriate function(s).  
+- The response is then synthesized into speech and delivered to the user.  
+
+---
+
+## Future Enhancements
+- **Multilingual Support:** Extend support beyond Turkish to other languages.  
+- **Advanced Speech Processing:** Improved noise cancellation and more natural speech synthesis.  
+- **Learning Models:** LLM continuously updated through user feedback.  
+- **Real-Time Alerts:** Instant notification system for accidents and emergencies.  
+- **Extended Function Calls:** Integration with new data sources and services.  
+
+---
+
+📖 This document provides a comprehensive explanation of LLM usage in the **YolYap Project** and serves as a guide for new developers joining the project.  
