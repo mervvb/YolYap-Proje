@@ -12,22 +12,39 @@ export default function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
   const [success, setSuccess] = useState(false)
   const router = useRouter()
 
-  const handleRegister = () => {
-    if (!name || !email || !password || !confirmPassword) {
-      setError('Lütfen tüm alanları doldurunuz.')
-      return
-    }
-    if (password !== confirmPassword) {
-      setError('Şifreler uyuşmuyor.')
-      return
-    }
-    setError('')
-    setSuccess(true)
-
-    setTimeout(() => {
-      router.push('/giris')
-    }, 1500)
+  const handleRegister = async () => {
+  if (!name || !email || !password || !confirmPassword) {
+    setError('Lütfen tüm alanları doldurunuz.')
+    return
   }
+  if (password !== confirmPassword) {
+    setError('Şifreler uyuşmuyor.')
+    return
+  }
+  setError('')
+  setSuccess(false)
+
+  try {
+    const base = process.env.NEXT_PUBLIC_BACKEND_URL || ''
+    if (!base) throw new Error('BACKEND URL bulunamadı.')
+
+    const res = await fetch(`${base}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    })
+
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      throw new Error(j?.detail || 'Kayıt başarısız.')
+    }
+
+    setSuccess(true)
+    setTimeout(() => router.push('/auth'), 1200)
+  } catch (err: any) {
+    setError(err.message || 'Beklenmeyen hata.')
+  }
+}
 
   return (
     <main
