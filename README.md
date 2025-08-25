@@ -1,18 +1,55 @@
-**🗺️ YolYap Projesi – Kurulum & Çalıştırma Kılavuzu**
+**🗺️ YolYap Project – Preview**
 ======================================================
 
-**YolYap**, rota planlama, harita tabanlı etkileşim ve yapay zekâ destekli öneriler sunan tam yığın (full-stack) bir uygulamadır. Bu doküman, projeyi kurup çalıştırmanız için eksiksiz bir rehberdir.
+<img width="1215" height="837" alt="Ekran Resmi 2025-08-21 21 59 19" src="https://github.com/user-attachments/assets/586e79ca-a28f-452a-8d1e-a2657ac3d8ba" />
 
-**📚 İçindekiler**
+
+<img width="1213" height="835" alt="Ekran Resmi 2025-08-21 21 59 57" src="https://github.com/user-attachments/assets/f29882b9-5df1-41f3-8d83-9e5b794d7242" />
+
+
+<img width="1224" height="839" alt="Ekran Resmi 2025-08-21 22 30 57" src="https://github.com/user-attachments/assets/c5c155bf-8903-44bc-918f-45cbe0e5b6bf" />
+
+
+<img width="1213" height="839" alt="Ekran Resmi 2025-08-21 22 31 12" src="https://github.com/user-attachments/assets/c302fd8e-c4c8-4cd2-882e-8ffac974c3c3" />
+
+
+<img width="1213" height="834" alt="Ekran Resmi 2025-08-21 22 31 50" src="https://github.com/user-attachments/assets/1c710e8c-b535-43b1-9df9-1077b22aca96" />
+
+
+<img width="1150" height="633" alt="Ekran Resmi 2025-08-21 22 31 58" src="https://github.com/user-attachments/assets/918d5ea6-093e-4149-b75f-f0f88c9e3bd5" />
+
+
+<img width="1175" height="704" alt="Ekran Resmi 2025-08-21 22 32 58" src="https://github.com/user-attachments/assets/dcc279bb-bde3-4194-89d4-1e043a82992f" />
+
+
+<img width="1086" height="669" alt="Ekran Resmi 2025-08-21 22 37 27" src="https://github.com/user-attachments/assets/508ab553-47f8-420d-b1cc-9583707abd04" />
+
+
+<img width="1162" height="695" alt="Ekran Resmi 2025-08-21 22 38 31" src="https://github.com/user-attachments/assets/361ee5f0-139f-4ae9-b568-e7925144c1c1" />
+
+
+
+<img width="505" height="658" alt="Ekran Resmi 2025-08-21 22 39 15" src="https://github.com/user-attachments/assets/69412717-48e5-46cf-97b2-68f766e49b95" />
+
+
+
+**🗺️ YolYap Project – Setup & Run Guide**
+======================================================
+
+**YolYap** is a full-stack application that provides route planning, map-based interaction, and AI-powered recommendations. This document is a complete guide to install and run the project.
+
+**📚 Table of Contents**
 ------------------
 
-1.  Proje Hakkında
+1.  About the Project
     
-2.  Mimari Genel Bakış
+2.  Architecture Overview
     
-3.  Gereklilikler
+3.  Requirements
     
-4.  *   Depoyu Klonla
+4.  Setup Steps
+   
+    *   Clone Repository
         
     *   Frontend (Next.js)
         
@@ -20,54 +57,54 @@
         
     *   MCP Bridge
         
-5.  Çalıştırma Akışı
+6.  Run Flow
     
-6.  Klasör Yapısı
+7.  Project Structure
     
-7.  Ortam Değişkenleri
+8.  Environment Variables
     
-8.  Faydalı Komutlar
+9.  Useful Commands
     
-9.  Geliştirme ve Katkı
+10.  Development & Contribution
     
-10.  Örnek .gitignore
-    
-
+11.  Sample .gitignore
     
 
-**🚀 Proje Hakkında**
-
-*   Frontend (frontend/) → Next.js tabanlı arayüz (Harita, Chat, UI).
-    
-*   Backend (backend/) → FastAPI tabanlı API (Rota planlama, AI/LLM).
-    
-*   MCP Bridge (backend/src/) → THY MCP sistemine bağlanan Node.js proxy (SSE).
     
 
-**🏗️ Mimari Genel Bakış**
+**🚀 About the Project**
 
-Kullanıcı → Frontend (Next.js) → Backend (FastAPI) → MCP Bridge (SSE) → MCP sistemi
+*   Frontend (frontend/) → Next.js-based UI (Map, Chat, UI).
+    
+*   Backend (backend/) → FastAPI-based API (Route planning, AI/LLM).
+    
+*   MCP Bridge (backend/mcp-bridge/) → Node.js proxy for THY MCP system (SSE).
+    
 
-Backend ayrıca OpenAI API ile konuşur, Frontend Mapbox API ile harita servislerini kullanır.
+**🏗️ Architecture Overview**
 
-**🔧 Gereklilikler**
+User → Frontend (Next.js) → Backend (FastAPI) → MCP Bridge (SSE) → MCP system
+
+Backend communicates with OpenAI API. Frontend uses Mapbox API for map services.
+
+**🔧 Requirements**
 --------------------
 
-*   Node.js 20+ (LTS önerilir)
+*   Node.js 20+ (LTS recommended)
     
-*   Python 3.11 / 3.12 (3.13 uyumsuz olabilir)
+*   Python 3.11 / 3.12 (⚠ 3.13 not supported)
     
 *   Git, cURL
     
-*   Paket yöneticisi: npm, yarn veya pnpm
+*   Package manager: npm, yarn, or pnpm
     
-*   Gerekli API anahtarları: Mapbox Public Token, OpenAI API Key
+*   Required API keys: Mapbox Public Token, OpenAI API Key
     
 
-**⚙️ Kurulum Adımları**
+**⚙️ Setup Steps**
 -----------------------
 
-**1) Depoyu Klonla**
+**1) Clone the Repository**
 
 git clone
 
@@ -102,6 +139,7 @@ uvicorn app.main:app –reload –port 8080  → http://localhost:8080/docs
 .env dosyası:
 
 OPENAI\_API\_KEY=
+MAPBOX\_SECRET\_TOKEN = 
 
 ### **4) MCP Bridge**
 
@@ -117,19 +155,19 @@ MCP\_API\_URL=
 
 MCP\_API\_KEY=
 
-**▶️ Çalıştırma Akışı**
+**▶️ Run Flow**
 -----------------------
 
-1.  Backend’i başlat → uvicorn app.main:app –reload
+1.  Start Backend → uvicorn app.main:app --reload
     
-2.  MCP Bridge’i çalıştır → npm run dev
+2.  Start MCP Bridge → npm run dev (inside backend/mcp-bridge)
     
-3.  Frontend’i aç → npm run dev
+3.  Start Frontend → npm run dev (inside frontend)
     
-4.  Tarayıcı → http://localhost:3000
+4.  Open browser → http://localhost:3000
     
 
-**📂 Klasör Yapısı**
+**📂 Project Structure**
 --------------------
 
 YolYap\_Proje/
@@ -172,16 +210,16 @@ YolYap\_Proje/
 
 └── README.md
 
-**🌍 Ortam Değişkenleri**
+**🌍 Environment Variables**
 -------------------------
 
 Frontend (.env.local): NEXT\_PUBLIC\_BACKEND\_URL, NEXT\_PUBLIC\_MAPBOX\_TOKEN
 
-Backend (.env): OPENAI\_API\_KEY, DB\_URL
+Backend (.env): OPENAI\_API\_KEY, MAPBOX\_SECRET\_TOKEN
 
 MCP Bridge (.env): MCP\_API\_URL, MCP\_API\_KEY(TOKEN)
 
-**💻 Faydalı Komutlar**
+**💻 Useful Commands**
 -----------------------
 
 Frontend:
@@ -212,19 +250,19 @@ npm install
 
 npm run dev
 
-**🤝 Geliştirme ve Katkı**
+**🤝 Development & Contribution**
 --------------------------
 
-1.  Repo’yu fork edin
+1.  Fork the repository
     
-2.  Yeni branch açın (git checkout -b feature/yeni-ozellik)
+2.  Create a new branch: (git checkout -b feature/new-feature)
     
-3.  Commit edin
+3.  Commit your changes
     
-4.  Push ve Pull Request açın
+4.  PPush & open a Pull Request
     
 
-**📑 Örnek .gitignore**
+**📑 Sample .gitignore**
 -----------------------
 
 node\_modules/
