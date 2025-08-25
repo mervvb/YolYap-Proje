@@ -1,7 +1,26 @@
+// frontend/app/auth/LoginForm.tsx
 'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+
+// Normalize backend base to avoid localhost/127.0.0.1 mismatch
+function normalizeBackendBase(raw: string): string {
+  try {
+    const u = new URL(raw);
+    if (typeof window !== 'undefined') {
+      const currentHost = window.location.hostname; // e.g. 'localhost' or '127.0.0.1'
+      // Keep port & protocol, just align hostname to current host so SameSite cookie kuralları bozulmasın.
+      if ((u.hostname === '127.0.0.1' && currentHost === 'localhost') ||
+          (u.hostname === 'localhost' && currentHost === '127.0.0.1')) {
+        u.hostname = currentHost;
+      }
+    }
+    return u.origin;
+  } catch {
+    return raw;
+  }
+}
 
 export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
   const [email, setEmail] = useState('')
@@ -10,7 +29,6 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
   const [success, setSuccess] = useState(false)
   const router = useRouter()
 
-    // LoginForm.tsx (yalnızca handleLogin değişti)
   const handleLogin = async () => {
     if (!email || !password) {
       setError('Lütfen tüm alanları doldurunuz.')
@@ -19,14 +37,19 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
     setError('')
     setSuccess(false)
 
+    // make base visible in catch/logs
+    let base = ''
     try {
-      const base = process.env.NEXT_PUBLIC_BACKEND_URL || ''
+      const rawBase = process.env.NEXT_PUBLIC_BACKEND_URL || ''
+      base = normalizeBackendBase(rawBase)
       if (!base) throw new Error('BACKEND URL bulunamadı.')
 
       const res = await fetch(`${base}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
+        credentials: 'include',
+        cache: 'no-store',
       })
 
       if (!res.ok) {
@@ -34,14 +57,19 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
         throw new Error(j?.detail || 'Giriş başarısız.')
       }
 
-      const data = await res.json()
-      // Örn. token’ı localStorage’a yazabilirsin:
-      // localStorage.setItem('token', data.access_token)
-
+      // Başarılı giriş — cookie set edildi.
       setSuccess(true)
-      setTimeout(() => router.push('/home'), 800)
+
+      // İsteğe bağlı: girişin gerçekten oturduğunu doğrulamak için /auth/me çağrısı yap.
+      try {
+        await fetch(`${base}/auth/me`, { credentials: 'include', cache: 'no-store' })
+      } catch {}
+
+      // Persona sayfasına yönlendir
+      setTimeout(() => router.push('/persona'), 400)
     } catch (err: any) {
-      setError(err.message || 'Beklenmeyen hata.')
+      console.warn('[Login] error with base:', base, err);
+      setError(err?.message || 'Beklenmeyen hata.')
     }
   }
 
