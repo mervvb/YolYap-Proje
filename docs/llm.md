@@ -64,6 +64,3 @@ Function calls follow **JSON format**:
 
 
 
-- 📖 This document provides a comprehensive explanation of LLM usage in the **YolYap Project** and serves as a guide for new developers joining the project.  
-
-
