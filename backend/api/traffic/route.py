@@ -9,12 +9,13 @@ class Pt(BaseModel):
     lng: float
 
 class RouteIn(BaseModel):
-    order: list[Pt]   # sıraya sokulmuş noktalar
+    order: list[Pt]
 
 @router.post("/route")
 async def route(inb: RouteIn):
     token = os.getenv("MAPBOX_SERVER_TOKEN")
-    if not token: raise HTTPException(500, "MAPBOX_SERVER_TOKEN eksik")
+    if not token:
+        raise HTTPException(500, "MAPBOX_SERVER_TOKEN eksik")
     if not inb.order or len(inb.order) < 2:
         raise HTTPException(400, "En az 2 nokta gerekli")
 
@@ -24,7 +25,7 @@ async def route(inb: RouteIn):
         "geometries": "geojson",
         "overview": "full",
         "steps": "false",
-        "access_token": token
+        "access_token": token,
     }
 
     async with httpx.AsyncClient(timeout=30) as hc:
