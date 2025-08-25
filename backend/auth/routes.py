@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, status
+#backend/auth/routes.py
+from fastapi import APIRouter, HTTPException, status, Request, Response
 from pydantic import BaseModel, EmailStr, Field
 from pathlib import Path
 from datetime import datetime
@@ -10,6 +11,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 DATA_DIR = Path(__file__).parent / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 USERS_FILE = DATA_DIR / "users.json"
+
+COOKIE_EMAIL = "user_email"
+COOKIE_ID = "user_id"  # opsiyonel: ileride id tutarsak
 
 # ---- PBKDF2 utils (stdlib) ----
 _ITER = 390000  # modern bir varsayılan
@@ -73,13 +77,78 @@ def register(inp: RegisterIn):
     return {"name": rec["name"], "email": rec["email"], "created_at": rec["created_at"]}
 
 @router.post("/login")
-def login(inp: LoginIn):
+def login(inp: LoginIn, response: Response):
     users = load_users()
     u = users.get(inp.email)
     if not u or not verify_password(inp.password, u.get("password_hash", "")):
         raise HTTPException(status_code=401, detail="E-posta veya şifre hatalı.")
     token = "demo-token"  # İstersen JWT ekleyebiliriz
+
+    # Geliştirme ortamı için cookie ayarları
+    # HttpOnly: True ise JS okuyamaz ama tarayıcı otomatik gönderir (daha güvenli).
+    # Frontend fetch çağrılarında credentials: 'include' şart.
+    response.set_cookie(
+        key=COOKIE_EMAIL,
+        value=u["email"],
+        httponly=True,
+        samesite="Lax",
+        secure=False,  # prod'da True (HTTPS) yapılmalı
+        path="/"
+    )
+    # Eğer ileride id eklenirse:
+    if u.get("id"):
+        response.set_cookie(
+            key=COOKIE_ID,
+            value=str(u["id"]),
+            httponly=True,
+            samesite="Lax",
+            secure=False,
+            path="/"
+        )
+
     return {
         "access_token": token,
         "user": {"name": u["name"], "email": u["email"], "created_at": u["created_at"]},
     }
+
+
+# Kullanıcı bilgilerini dönen endpoint
+@router.get("/me")
+def me(request: Request):
+    users = load_users()
+
+    # 1) Cookie öncelikli
+    email = request.cookies.get(COOKIE_EMAIL)
+    uid = request.cookies.get(COOKIE_ID)
+
+    # 2) Header fallback
+    if not email:
+        email = request.headers.get("x-user-email")
+
+    # 3) Query fallback
+    if not email:
+        email = request.query_params.get("email")
+
+    if not email and not uid:
+        raise HTTPException(status_code=401, detail="Giriş yapılmadı")
+
+    key = email or uid
+    if key not in users:
+        raise HTTPException(status_code=401, detail="Kullanıcı bulunamadı")
+
+    u = users[key]
+    return {
+        "name": u.get("name", ""),
+        "email": u.get("email", email),
+        "id": u.get("id", uid),
+        "created_at": u.get("created_at"),
+        "role": u.get("role", "user"),
+        "plan": u.get("plan", "free"),
+    }
+
+@router.post("/logout")
+def logout(response: Response):
+    # Cookie'leri temizle
+    response.delete_cookie(COOKIE_EMAIL, path="/")
+    response.delete_cookie(COOKIE_ID, path="/")
+    return {"ok": True}
