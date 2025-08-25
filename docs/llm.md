@@ -62,7 +62,7 @@ Function calls follow **JSON format**:
   }
 }
 
----
+
 
 ### Functions:
 - **get_traffic_info:** Returns traffic status for the specified location and time.  
@@ -70,13 +70,13 @@ Function calls follow **JSON format**:
 - **convert_speech_to_text:** Converts a voice command into text (In Development).  
 - **convert_text_to_speech:** Converts a text response into speech (In Development).  
 
----
+
 
 ### Response Format:
 After a function call, the LLM returns a structured response like this:
 
 ```json
----
+
 {
   "response_text": "At 08:00 in Istanbul, traffic density is at 75%, with slowdowns observed on major roads.",
   "data": {
@@ -85,7 +85,6 @@ After a function call, the LLM returns a structured response like this:
   }
 }
 
----
 
 # Example Usage Scenarios
 
@@ -97,7 +96,7 @@ After a function call, the LLM returns a structured response like this:
 - Traffic data is retrieved from the **Mapbox API**.  
 - The user is provided with traffic density and alternative route suggestions.  
 
----
+
 
 ### 2. Flight Status Query
 **User:** "What time does Turkish Airlines flight TK123 depart?"
@@ -107,7 +106,7 @@ After a function call, the LLM returns a structured response like this:
 - Flight data is retrieved from the **THY MCP API**.  
 - The user is informed about the departure time and current flight status.  
 
----
+
 
 ### 3. Voice Command Query (In Development)
 **User (Voice):** "What’s the road situation to Ankara today?"
@@ -117,7 +116,7 @@ After a function call, the LLM returns a structured response like this:
 - The LLM processes the query and calls the appropriate function(s).  
 - The response is then synthesized into speech and delivered to the user.  
 
----
+
 
 ## Future Enhancements
 - **Multilingual Support:** Extend support beyond Turkish to other languages.  
@@ -126,9 +125,10 @@ After a function call, the LLM returns a structured response like this:
 - **Real-Time Alerts:** Instant notification system for accidents and emergencies.  
 - **Extended Function Calls:** Integration with new data sources and services.  
 
----
+
 
 📖 This document provides a comprehensive explanation of LLM usage in the **YolYap Project** and serves as a guide for new developers joining the project.  
+
 
 
 
