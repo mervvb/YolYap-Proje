@@ -61,7 +61,7 @@ Function calls follow **JSON format**:
     "time": "2024-06-01T08:00:00Z"
   }
 }
-
+---
 ### Functions:
 - **get_traffic_info:** Returns traffic status for the specified location and time.  
 - **get_flight_status:** Provides flight information based on flight number or date.  
@@ -74,6 +74,7 @@ Function calls follow **JSON format**:
 After a function call, the LLM returns a structured response like this:
 
 ```json
+---
 {
   "response_text": "At 08:00 in Istanbul, traffic density is at 75%, with slowdowns observed on major roads.",
   "data": {
@@ -124,5 +125,6 @@ After a function call, the LLM returns a structured response like this:
 ---
 
 📖 This document provides a comprehensive explanation of LLM usage in the **YolYap Project** and serves as a guide for new developers joining the project.  
+
 
 
