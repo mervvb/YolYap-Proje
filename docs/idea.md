@@ -1,26 +1,34 @@
-# Proje Fikri
+# Project Idea
 
-Bu proje, kullanıcıların harita üzerinde kolayca rota planlamalarını sağlayan, trafik bilgisi ve kullanıcı tercihleri doğrultusunda öneriler sunan bir uygulamadır. Ayrıca yapay zeka destekli asistan entegrasyonu ile daha akıllı ve kişiselleştirilmiş deneyimler sunmayı hedeflemektedir.
+This project is an application that allows users to easily plan routes on a map, providing recommendations based on traffic information and user preferences. With AI-powered assistant integration, it aims to deliver a smarter and more personalized experience.
 
-# Ana Özellikler
 
-- Harita tabanlı rota planlama
-- Gerçek zamanlı trafik bilgisi entegrasyonu
-- Kullanıcı tercihine göre kişiselleştirilmiş rota ve aktivite önerileri
-- Yapay zeka asistan entegrasyonu ile kullanıcıya destek ve rehberlik
+# Main Features
 
-# Teknik Yapı
+- Map-based route planning 
+- Real-time traffic information integration 
+- Personalized route and activity recommendations based on user preferences
+- AI assistant integration for guidance and support 
+
+# Technical Structure
 
 - **Frontend:** Next.js, Leaflet, Mapbox
 - **Backend:** FastAPI, Python, OpenAI API, MCP Bridge
-- **Veritabanı:** PostgreSQL
 
-# Kullanım Senaryosu
+# Usage Scenario
 
-Kullanıcı İstanbul’da 3 saatlik bir tur yapmak istediğinde, uygulama öncelikle mevcut trafik durumunu analiz eder ve kullanıcının tercihleri doğrultusunda (örneğin kültürel mekanlar, kafeler) uygun noktaları seçer. Ardından yapay zeka destekli asistan, en verimli ve keyifli rotayı oluşturur ve kullanıcıya sunar. Kullanıcı bu rota üzerinden rahatlıkla turunu gerçekleştirebilir.
+When a user in Istanbul wants to plan a 3-hour tour, the application first analyzes the current traffic conditions and, based on the user’s preferences (e.g., cultural sites, cafés), selects suitable locations. The AI-powered assistant then creates the most efficient and enjoyable route and presents it to the user. The user can easily follow this route to complete the tour.
 
-# Gelecek Geliştirmeler
 
-- Kişiselleştirilmiş öneri algoritmalarının geliştirilmesi
-- Ulaşım desteği: toplu taşıma (otobüs/metro/tramvay) bilgileri ve entegrasyonu, yürüme/bisiklet/araç modları, aktarma sayısı ve tahmini maliyet/varış süresi optimizasyonu
-- Ziyaret edilecek yerleri özelliklerine göre filtreleme: kategori (tarihî/müze/park/kafe vb.), açık/kapalı saatler, giriş ücreti, erişilebilirlik, kalabalıklık tahmini, çocuk dostu, açık/kapalı alan
+# Future Improvements
+- Development of more advanced personalized recommendation algorithms  
+- Transportation support: integration of public transit (bus/metro/tram), walking/cycling/driving modes, transfer count, and optimization of estimated cost/arrival time  
+- Filtering of places to visit based on their features:  
+  - Category (historical/museum/park/café, etc.)  
+  - Opening/closing hours  
+  - Entrance fee  
+  - Accessibility  
+  - Crowd estimation  
+  - Child-friendly options  
+  - Indoor/outdoor classification  
+
