@@ -81,7 +81,7 @@ After a function call, the LLM returns a structured response like this:
     "affected_roads": ["E-5", "TEM Highway"]
   }
 }
-
+---
 # Example Usage Scenarios
 
 ### 1. Traffic Information Query
@@ -124,4 +124,5 @@ After a function call, the LLM returns a structured response like this:
 ---
 
 📖 This document provides a comprehensive explanation of LLM usage in the **YolYap Project** and serves as a guide for new developers joining the project.  
+
 
