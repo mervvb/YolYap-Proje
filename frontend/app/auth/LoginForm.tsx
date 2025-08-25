@@ -10,17 +10,39 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
   const [success, setSuccess] = useState(false)
   const router = useRouter()
 
-  const handleLogin = () => {
+    // LoginForm.tsx (yalnızca handleLogin değişti)
+  const handleLogin = async () => {
     if (!email || !password) {
       setError('Lütfen tüm alanları doldurunuz.')
       return
     }
     setError('')
-    setSuccess(true)
+    setSuccess(false)
 
-    setTimeout(() => {
-      router.push('/home')
-    }, 3000)
+    try {
+      const base = process.env.NEXT_PUBLIC_BACKEND_URL || ''
+      if (!base) throw new Error('BACKEND URL bulunamadı.')
+
+      const res = await fetch(`${base}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j?.detail || 'Giriş başarısız.')
+      }
+
+      const data = await res.json()
+      // Örn. token’ı localStorage’a yazabilirsin:
+      // localStorage.setItem('token', data.access_token)
+
+      setSuccess(true)
+      setTimeout(() => router.push('/home'), 800)
+    } catch (err: any) {
+      setError(err.message || 'Beklenmeyen hata.')
+    }
   }
 
   return (
