@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function ProfilPage() {
   // --- Sadece UI demoları (backend bağlanınca kaldır/bağla) ---
@@ -20,6 +21,22 @@ export default function ProfilPage() {
   const [notifyPush, setNotifyPush] = useState(false)
 
   const [saving, setSaving] = useState<null | string>(null)
+
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      })
+    } catch (e) {
+      console.error('Logout failed', e)
+    } finally {
+      router.push('/auth')
+    }
+  }
+
   const fakeSave = async (section: string) => {
     setSaving(section)
     await new Promise((r) => setTimeout(r, 600))
@@ -145,9 +162,9 @@ export default function ProfilPage() {
         <section className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
           <h2 className="text-lg font-semibold mb-4">🛑 Hesap Yönetimi</h2>
           <div className="grid gap-3 text-sm">
-            <button className="justify-self-start rounded-md border border-gray-300 px-3 py-1 hover:border-[#2563EB]">Tüm cihazlardan çıkış yap</button>
-            <button className="justify-self-start rounded-md border border-yellow-300 px-3 py-1 text-yellow-700 hover:bg-yellow-50">Hesabı dondur</button>
-            <button className="justify-self-start rounded-md border border-red-300 px-3 py-1 text-red-600 hover:bg-red-50">Hesabı sil (kalıcı)</button>
+            <button onClick={handleLogout} className="justify-self-start rounded-md border border-gray-300 px-3 py-1 hover:border-[#2563EB]">Oturumu Kapat</button>
+            <button className="justify-self-start rounded-md border border-yellow-300 px-3 py-1 text-yellow-700 hover:bg-yellow-50">Hesabı Dondur</button>
+            <button className="justify-self-start rounded-md border border-red-300 px-3 py-1 text-red-600 hover:bg-red-50">Hesabı Sil</button>
             <p className="text-xs text-gray-500">(Bu işlemler onay modalları ve backend ile bağlanacak)</p>
           </div>
         </section>
