@@ -129,9 +129,7 @@ export default function ProfilPage() {
             <div className="flex gap-2 mt-1">
               <button onClick={()=>setPlan('free')} className={`px-3 py-1 rounded-md border ${plan==='free'?'border-[#2563EB] text-[#2563EB]':'border-gray-300 text-gray-700 hover:border-[#2563EB]'}`}>Free</button>
               <button onClick={()=>setPlan('premium')} className={`px-3 py-1 rounded-md border ${plan==='premium'?'border-[#2563EB] text-[#2563EB]':'border-gray-300 text-gray-700 hover:border-[#2563EB]'}`}>Premium</button>
-            </div>
-            <p className="text-xs text-gray-500">(Ödeme ve faturalandırma ekranı backend ile eklenecek)</p>
-
+            </div>       
             <div className="pt-2 text-right">
               <button onClick={() => fakeSave('Abonelik')} disabled={!!saving} className={`px-4 py-2 rounded-md text-white ${saving? 'bg-gray-400' : 'bg-[#2563EB] hover:bg-[#1D4ED8]'} `}>Kaydet</button>
             </div>
@@ -150,7 +148,7 @@ export default function ProfilPage() {
               <input type="checkbox" checked={notifyPush} onChange={(e)=>setNotifyPush(e.target.checked)} />
               <span>Push bildirimleri</span>
             </label>
-            <p className="text-xs text-gray-500">(Bildirim tercihleri backend ile saklanacak)</p>
+            
 
             <div className="pt-2 text-right">
               <button onClick={() => fakeSave('Uygulama Ayarları')} disabled={!!saving} className={`px-4 py-2 rounded-md text-white ${saving? 'bg-gray-400' : 'bg-[#2563EB] hover:bg-[#1D4ED8]'} `}>Kaydet</button>
@@ -164,8 +162,7 @@ export default function ProfilPage() {
           <div className="grid gap-3 text-sm">
             <button onClick={handleLogout} className="justify-self-start rounded-md border border-gray-300 px-3 py-1 hover:border-[#2563EB]">Oturumu Kapat</button>
             <button className="justify-self-start rounded-md border border-yellow-300 px-3 py-1 text-yellow-700 hover:bg-yellow-50">Hesabı Dondur</button>
-            <button className="justify-self-start rounded-md border border-red-300 px-3 py-1 text-red-600 hover:bg-red-50">Hesabı Sil</button>
-            <p className="text-xs text-gray-500">(Bu işlemler onay modalları ve backend ile bağlanacak)</p>
+            <button className="justify-self-start rounded-md border border-red-300 px-3 py-1 text-red-600 hover:bg-red-50">Hesabı Sil</button>           
           </div>
         </section>
       </div>
