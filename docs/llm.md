@@ -29,9 +29,10 @@ The LLM architecture in the YolYap Project is modular and integrates information
 
 ## 🤖 Models Used
 - **OpenAI Text-to-Text Model:** For understanding user queries and generating natural language responses.  
-- **Speech Recognition & Synthesis Modules:** Google Speech-to-Text and Text-to-Speech APIs (or similar) for voice input/output (in development).  
+- **Google Imagen (Image Generation):** For creating persona avatars and visual content.  
+- **Google Speech-to-Text & Text-to-Speech:** For voice input/output support (in development).  
 - **Mapbox Traffic Data:** Provides real-time traffic and road condition information.  
-- **THY MCP Integration:** Enables access to Turkish Airlines data (flight status, departure/arrival info).  
+- **Turkish Airlines MCP Integration:** Enables access to flight status, departure, and arrival information from Turkish Airlines.  
 
 ---
 
@@ -47,20 +48,6 @@ The LLM architecture in the YolYap Project is modular and integrates information
 ---
 
 
-## ⚙️ Function Calling
-
-LLM can call specific functions depending on the query.  
-Function calls follow **JSON format**:  
-
-**Example:**
-```json
-{
-  "name": "get_traffic_info",
-  "parameters": {
-    "location": "Istanbul",
-    "time": "2024-06-01T08:00:00Z"
-  }
-}
 
 
 
