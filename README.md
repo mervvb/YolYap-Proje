@@ -279,8 +279,6 @@ frontend/.env.local
 
 backend/.env
 
-backend/mcp-bridge/.env
-
 .DS\_Store
 
 .idea/
