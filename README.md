@@ -4,32 +4,95 @@
 <img width="1215" height="837" alt="Ekran Resmi 2025-08-21 21 59 19" src="https://github.com/user-attachments/assets/586e79ca-a28f-452a-8d1e-a2657ac3d8ba" />
 
 
-<img width="1213" height="835" alt="Ekran Resmi 2025-08-21 21 59 57" src="https://github.com/user-attachments/assets/f29882b9-5df1-41f3-8d83-9e5b794d7242" />
 
 
-<img width="1224" height="839" alt="Ekran Resmi 2025-08-21 22 30 57" src="https://github.com/user-attachments/assets/c5c155bf-8903-44bc-918f-45cbe0e5b6bf" />
-
-
-<img width="1213" height="839" alt="Ekran Resmi 2025-08-21 22 31 12" src="https://github.com/user-attachments/assets/c302fd8e-c4c8-4cd2-882e-8ffac974c3c3" />
-
-
-<img width="1213" height="834" alt="Ekran Resmi 2025-08-21 22 31 50" src="https://github.com/user-attachments/assets/1c710e8c-b535-43b1-9df9-1077b22aca96" />
-
-
-<img width="1150" height="633" alt="Ekran Resmi 2025-08-21 22 31 58" src="https://github.com/user-attachments/assets/918d5ea6-093e-4149-b75f-f0f88c9e3bd5" />
-
-
-<img width="1175" height="704" alt="Ekran Resmi 2025-08-21 22 32 58" src="https://github.com/user-attachments/assets/dcc279bb-bde3-4194-89d4-1e043a82992f" />
-
-
-<img width="1086" height="669" alt="Ekran Resmi 2025-08-21 22 37 27" src="https://github.com/user-attachments/assets/508ab553-47f8-420d-b1cc-9583707abd04" />
-
-
-<img width="1162" height="695" alt="Ekran Resmi 2025-08-21 22 38 31" src="https://github.com/user-attachments/assets/361ee5f0-139f-4ae9-b568-e7925144c1c1" />
+<img width="1214" height="835" alt="KAYIT" src="https://github.com/user-attachments/assets/03a5b014-2968-41fe-b21c-02ed3aaaff95" />
 
 
 
-<img width="505" height="658" alt="Ekran Resmi 2025-08-21 22 39 15" src="https://github.com/user-attachments/assets/69412717-48e5-46cf-97b2-68f766e49b95" />
+
+<img width="1213" height="838" alt="GİRİŞ" src="https://github.com/user-attachments/assets/756a2dd0-b6c3-4ec1-b807-8a222bc67dd4" />
+
+
+
+
+<img width="1220" height="839" alt="HOME" src="https://github.com/user-attachments/assets/647d65ca-ef39-4ee8-88dc-99c0dd2f8b4a" />
+
+
+
+
+<img width="1019" height="614" alt="ROTA1" src="https://github.com/user-attachments/assets/10ff639d-3057-4cdf-b4cf-df6c8d5faf48" />
+
+
+
+
+<img width="1040" height="611" alt="ROTA2" src="https://github.com/user-attachments/assets/03d1e3a6-2587-4bb8-93a6-42db76d904e4" />
+
+
+
+
+<img width="318" height="131" alt="SAAT1" src="https://github.com/user-attachments/assets/162c6e3c-3dc8-4541-a4d7-c62bee2d61a3" />
+
+
+
+
+<img width="317" height="109" alt="KAYDIRICI" src="https://github.com/user-attachments/assets/43ce545c-48b8-4f09-b497-09dbe2128fd1" />
+
+
+
+
+<img width="308" height="105" alt="SAAT2" src="https://github.com/user-attachments/assets/1fa50b31-4b28-47f2-844f-e741426287c6" />
+
+
+
+
+<img width="1076" height="426" alt="ROTALAR" src="https://github.com/user-attachments/assets/23aadfb7-244f-4171-852a-e4cc0447af40" />
+
+
+
+
+<img width="1069" height="545" alt="Herkes için kullanım" src="https://github.com/user-attachments/assets/90756c73-9f29-42e3-a382-c67e9d343f8a" />
+
+
+
+
+<img width="641" height="672" alt="ÇARK" src="https://github.com/user-attachments/assets/5752147e-1574-4d72-a014-1b13f6a7e002" />
+
+
+
+
+<img width="688" height="697" alt="ÖNERİ" src="https://github.com/user-attachments/assets/8e8eaa2e-49a0-4f7f-bf5d-5de5b154be34" />
+
+
+
+
+<img width="677" height="637" alt="asistan" src="https://github.com/user-attachments/assets/fdf8ff50-1ffb-41f4-88ef-d2b29957286c" />
+
+
+
+
+<img width="670" height="635" alt="mcp1" src="https://github.com/user-attachments/assets/76c14c91-f7df-4bf3-b6e1-3c8fcf92f4f0" />
+
+
+
+
+<img width="665" height="281" alt="mcp2" src="https://github.com/user-attachments/assets/57b1ad7e-394e-4ae3-bad1-4c086cecaea2" />
+
+
+
+
+<img width="670" height="635" alt="mcp3" src="https://github.com/user-attachments/assets/62905343-1dd6-42d0-ab33-6cd804a202f3" />
+
+
+
+
+<img width="1215" height="592" alt="PROFİL1" src="https://github.com/user-attachments/assets/2796ffc2-d7e9-4507-8baf-84c1eb789387" />
+
+
+
+
+<img width="1214" height="591" alt="PROFİL2" src="https://github.com/user-attachments/assets/ea4d4ae9-f37b-44cb-aef2-cd6ee17085aa" />
+
 
 
 
