@@ -13,7 +13,7 @@ This project is an application that allows users to easily plan routes on a map,
 # Technical Structure
 
 - **Frontend:** Next.js, Leaflet, Mapbox
-- **Backend:** FastAPI, Python, OpenAI API, MCP Bridge
+- **Backend:** FastAPI, Python, OpenAI API, Google API (Imagen 4 Generate), THY MCP Server
 
 # Usage Scenario
 
@@ -31,4 +31,5 @@ When a user in Istanbul wants to plan a 3-hour tour, the application first analy
   - Crowd estimation  
   - Child-friendly options  
   - Indoor/outdoor classification  
+
 
