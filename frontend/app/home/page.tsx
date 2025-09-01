@@ -10,6 +10,15 @@ const ChatWidget = dynamic(() => import('../../components/ChatWidget'), { ssr: f
 
 // ---- ENV ----
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'
+
+function ensureAbsUrl(url: string): string {
+  if (!url) return "";
+  if (url.startsWith("/")) {
+    const base = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+    return base ? `${base}${url}` : url;
+  }
+  return url;
+}
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''
 const MAPBOX_STYLE = process.env.NEXT_PUBLIC_MAPBOX_STYLE || 'mapbox/streets-v12'
 
@@ -182,20 +191,24 @@ function WheelModal({
           {/* Persona görsel alanı (liste yerine görsel) */}
           <div className="mt-5">
             {genLoading ? (
-              <div className="w-full h-40 sm:h-44 rounded-xl border border-gray-200 shadow-sm bg-gradient-to-r from-gray-100 to-gray-200 animate-pulse grid place-items-center text-gray-500 text-sm">
+              <div className="mx-auto my-2 rounded-xl border border-gray-200 shadow-sm overflow-hidden aspect-square w-[260px] sm:w-[300px] bg-gradient-to-r from-gray-100 to-gray-200 animate-pulse grid place-items-center text-gray-500 text-sm">
                 Görsel oluşturuluyor…
               </div>
             ) : genImageUrl ? (
               <>
               {!imgError ? (
-                <img
-                  src={genImageUrl}
-                  alt="AI görsel"
-                  className="w-full h-40 sm:h-44 object-cover rounded-xl border border-gray-200 shadow-sm"
-                  onError={() => setImgError(true)}
-                />
+                <div className="mx-auto my-2 rounded-xl border border-gray-200 shadow-sm overflow-hidden aspect-square w-[260px] sm:w-[300px]">
+                  <img
+                    src={genImageUrl}
+                    alt="AI görsel"
+                    className="w-full h-full object-contain bg-white"
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    onError={() => setImgError(true)}
+                  />
+                </div>
               ) : (
-                <div className="w-full h-40 sm:h-44 rounded-xl border border-red-200 bg-red-50 grid place-items-center text-red-600 text-sm">
+                <div className="mx-auto my-2 rounded-xl border border-red-200 bg-red-50 grid place-items-center text-red-600 text-sm aspect-square w-[260px] sm:w-[300px]">
                   Görsel yüklenemedi
                 </div>
               )}
@@ -362,6 +375,11 @@ export default function HomePage() {
     } catch {}
   }, [selectedPlaces, startAnchor, startMarkerId, timeMode, timeBudget])
 
+  // Order değiştiğinde/başlangıç güncellendiğinde marker numaralarını tazele
+  useEffect(() => {
+    try { renumberMarkers() } catch {}
+  }, [selectedPlaces, startMarkerId, startAnchor])
+
   // numbered icon
   function makeNumberedIcon(n: number, isStart = false) {
     const L: any = (window as any).L
@@ -401,17 +419,15 @@ export default function HomePage() {
     }
 
     const list = selectedPlaces.slice()
-    if (startMarkerId) {
-      const sIdx = list.findIndex((p) => p.id === startMarkerId)
-      const visualOrder = sIdx >= 0
-        ? [list[sIdx], ...list.slice(0, sIdx), ...list.slice(sIdx + 1)]
-        : list
-
-      visualOrder.forEach((p, i) => {
+        if (startMarkerId) {
+      // Numara sırası her zaman selectedPlaces sırası olsun.
+      // startMarkerId sadece işaretçiyi "başlangıç" (kırmızı) olarak vurgular.
+      list.forEach((p, i) => {
         const m = markersRef.current[p.id]
         if (!m) return
-        const n = i === 0 ? 1 : i + 1
-        try { m.setIcon(makeNumberedIcon(n, i === 0)) } catch {}
+        const isStart = p.id === startMarkerId
+        const n = i + 1
+        try { m.setIcon(makeNumberedIcon(n, isStart)) } catch {}
       })
       return
     }
@@ -626,6 +642,24 @@ export default function HomePage() {
     mapRef.current.fitBounds(L.latLngBounds(pts), { padding: [30,30] })
   }
 
+  // Polyline bazlı sıralama: rotanın geometrisine en yakın indekslere göre yerleri sırala
+  function orderPlacesByGeometry(list: Place[], coords: Array<[number, number]>): Place[] {
+    if (!Array.isArray(list) || !Array.isArray(coords) || !coords.length) return list
+    const latlngs = coords.map((c) => ({ lat: c[1], lng: c[0] }))
+    const scored = list.map((p) => {
+      let bestIdx = 0, bestD = Infinity
+      for (let i = 0; i < latlngs.length; i++) {
+        const dlat = latlngs[i].lat - p.lat
+        const dlng = latlngs[i].lng - p.lng
+        const d = dlat * dlat + dlng * dlng
+        if (d < bestD) { bestD = d; bestIdx = i }
+      }
+      return { p, bestIdx, bestD }
+    })
+    scored.sort((a, b) => (a.bestIdx - b.bestIdx) || (a.bestD - b.bestD))
+    return scored.map(s => s.p)
+  }
+
   // ---- ROTA: sadece backend /plan ----
   async function handleBuildRoute() {
     if (!mapRef.current) return alert('Harita hazır değil.')
@@ -659,19 +693,42 @@ export default function HomePage() {
       if (!res.ok) throw new Error(raw?.slice(0,200) || `Status ${res.status}`)
 
       const data = raw ? JSON.parse(raw) : {}
-      // yeni sıra
+
+      // --- Order handling ---
+      let workingOrder: Place[] = list
+      const hasBackendOrder = Array.isArray(data.order) || Array.isArray(data.placesOrdered)
+
       if (Array.isArray(data.order)) {
-        let newOrder = data.order.map((idx: number) => list[idx]).filter(Boolean)
+        const newOrder: Place[] = data.order.map((idx: number) => list[idx]).filter(Boolean)
         if (newOrder.length === list.length) {
-          if (startMarkerId) {
-            const pos = newOrder.findIndex(p => p.id === startMarkerId)
-            if (pos > 0) newOrder = [...newOrder.slice(pos), ...newOrder.slice(0, pos)]
-          }
+          workingOrder = newOrder
           setSelectedPlaces(newOrder)
-          if (startAnchor) setStartMarkerId(null)
-          else if (newOrder[0]) {
+          // Kullanıcı özel başlangıç seçmediyse ilk noktayı başlangıç kabul et
+          if (!startAnchor && !startMarkerId && newOrder[0]) {
             setStartMarkerId(newOrder[0].id)
             setStartAnchor({ lat: newOrder[0].lat, lng: newOrder[0].lng })
+          }
+          setTimeout(() => renumberMarkers(), 0)
+        }
+      } else if (Array.isArray(data.placesOrdered) && data.placesOrdered.length === list.length) {
+        const ordered: Place[] = []
+        const remaining = [...list]
+        for (const pt of data.placesOrdered as Array<{lat:number,lng:number}>) {
+          let bestIdx = 0, bestD = Infinity
+          for (let i=0;i<remaining.length;i++) {
+            const dlat = remaining[i].lat - pt.lat
+            const dlng = remaining[i].lng - pt.lng
+            const d = dlat*dlat + dlng*dlng
+            if (d < bestD) { bestD = d; bestIdx = i }
+          }
+          ordered.push(remaining.splice(bestIdx,1)[0])
+        }
+        if (ordered.length === list.length) {
+          workingOrder = ordered
+          setSelectedPlaces(ordered)
+          if (!startAnchor && !startMarkerId && ordered[0]) {
+            setStartMarkerId(ordered[0].id)
+            setStartAnchor({ lat: ordered[0].lat, lng: ordered[0].lng })
           }
           setTimeout(() => renumberMarkers(), 0)
         }
@@ -680,6 +737,22 @@ export default function HomePage() {
       // çizgi
       const coords = data?.geometry?.coordinates
       if (!Array.isArray(coords) || !coords.length) throw new Error('Rota geometrisi yok')
+
+      // Eğer backend bir sıralama vermediyse, geometriye göre sırala (backend verdiyse dokunma)
+      if (!hasBackendOrder) {
+        try {
+          const orderedByGeom = orderPlacesByGeometry(workingOrder, coords as Array<[number, number]>)
+          if (orderedByGeom.length === workingOrder.length) {
+            workingOrder = orderedByGeom
+            setSelectedPlaces(orderedByGeom)
+            if (!startAnchor && !startMarkerId && orderedByGeom[0]) {
+              setStartMarkerId(orderedByGeom[0].id)
+              setStartAnchor({ lat: orderedByGeom[0].lat, lng: orderedByGeom[0].lng })
+            }
+            setTimeout(() => renumberMarkers(), 0)
+          }
+        } catch {}
+      }
       const L: any = (window as any).L
       if (routeLineRef.current) { try { mapRef.current.removeLayer(routeLineRef.current) } catch {}; routeLineRef.current = null }
       const latlngs = coords.map((c: [number, number]) => [c[1], c[0]])
@@ -831,12 +904,11 @@ export default function HomePage() {
         throw new Error(data?.detail || `Hata: ${res.status}`)
       }
       if (data?.image_url) {
-        const url = String(data.image_url)
-        if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) {
-          setGenImageUrl(url)
-        } else {
-          setGenImageUrl(`${API_BASE}${url}`)
+        let url = String(data.image_url)
+        if (!url.startsWith('data:')) {
+          url = ensureAbsUrl(url)
         }
+        setGenImageUrl(url)
       } else {
         setGenImageUrl(null)
       }
@@ -1061,10 +1133,23 @@ export default function HomePage() {
                       <div className="flex items-center gap-2 whitespace-nowrap">
                         <button
                           onClick={()=>{
-                            for (const mid of Object.keys(markersRef.current)) { try { markersRef.current[mid].setIcon(defaultIconRef.current) } catch {} }
+                            // Tüm marker ikonlarını sıfırla
+                            for (const mid of Object.keys(markersRef.current)) {
+                              try { markersRef.current[mid].setIcon(defaultIconRef.current) } catch {}
+                            }
+                            // Bu yeri başlangıç olarak ata
                             const m = markersRef.current[p.id]; if (m) { try { m.setIcon(startIconRef.current) } catch {} }
-                            setStartMarkerId(p.id); setStartAnchor({ lat:p.lat, lng:p.lng }); renumberMarkers()
-                          }}
+                            setStartMarkerId(p.id); setStartAnchor({ lat:p.lat, lng:p.lng });
+
+                            // Görsel sıra = gerçek sıra: seçilen yeri listenin başına taşı
+                            setSelectedPlaces(prev => {
+                              const idx = prev.findIndex(x => x.id === p.id)
+                              if (idx <= 0) return prev
+                              return [prev[idx], ...prev.slice(0, idx), ...prev.slice(idx + 1)]
+                            })
+
+                              setTimeout(() => renumberMarkers(), 0)
+                            }}
                           className="rounded-md border border-emerald-200 px-2 py-1 text-xs text-emerald-700 hover:bg-emerald-50"
                         >Başlangıç</button>
                         <button onClick={()=>removePlace(p.id)} className="rounded-md border border-red-200 px-2 py-1 text-xs text-red-600 hover:bg-red-50">Sil</button>
