@@ -1,4 +1,3 @@
-// frontend/components/WheelModal.tsx
 'use client'
 
 type Persona = { name: string; key: string; emoji: string; sample: string }
@@ -117,12 +116,15 @@ export default function WheelModal({
                 <div className="mt-4 flex flex-col items-center">
                   {genImageUrl && (
                     <>
-                      <img
-                        src={genImageUrl}
-                        alt="AI görsel"
-                        className="w-full rounded-xl border border-gray-200 shadow-sm object-cover"
-                        style={{ maxHeight: 280 }}
-                      />
+                      <div className="mx-auto my-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden aspect-square w-[260px] sm:w-[300px]">
+                        <img
+                          src={genImageUrl}
+                          alt="AI görsel"
+                          className="w-full h-full object-contain bg-white"
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
                       {/* Kopyalama butonu */}
                       <button
                         className="mt-2 text-xs px-3 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50"
