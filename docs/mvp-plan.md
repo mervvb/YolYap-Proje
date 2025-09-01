@@ -33,9 +33,9 @@
 
 ## 4) Technical Architecture
 
-- **Frontend:** Next.js 14 (App Router), Tailwind CSS, React Query, Leaflet / Mapbox
-- **Backend:** FastAPI (Python), MCP Bridge (Node.js + Express)
-- **AI/LLM:** OpenAI API (text-to-text), optional THY MCP integration
+- **Frontend:** Next.js 14 (App Router), Tailwind CSS, React Query, Leaflet / Mapbox  
+- **Backend:** FastAPI (Python), integrated `mcp_client.py` for THY MCP connection  
+- **AI/LLM:** OpenAI API (text-to-text), optional THY MCP integration  
 - **Authentication:** JWT + Session 
 
 ## 6) Success Criteria
@@ -46,4 +46,5 @@
 - Regular feedback collected from the first user base.
 - Project timeline is followed, with critical bugs kept minimal.
 - Product remains scalable and sustainable for future growth.
+
 
