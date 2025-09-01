@@ -55,19 +55,13 @@
         
     *   Backend (FastAPI)
         
-    *   MCP Bridge
-        
-6.  Run Flow
+5.  Run Flow
     
-7.  Project Structure
+6.  Project Structure
     
-8.  Environment Variables
+7.  Development & Contribution
     
-9.  Useful Commands
-    
-10.  Development & Contribution
-    
-11.  Sample .gitignore
+8.  Sample .gitignore
     
 
     
@@ -76,14 +70,12 @@
 
 *   Frontend (frontend/) → Next.js-based UI (Map, Chat, UI).
     
-*   Backend (backend/) → FastAPI-based API (Route planning, AI/LLM).
-    
-*   MCP Bridge (backend/mcp-bridge/) → Node.js proxy for THY MCP system (SSE).
+*   Backend (backend/) → FastAPI-based API (Route planning, AI/LLM/MCP).
     
 
 **🏗️ Architecture Overview**
 
-User → Frontend (Next.js) → Backend (FastAPI) → MCP Bridge (SSE) → MCP system
+User → Frontend (Next.js) → Backend (FastAPI)  → MCP system or LLM → Response
 
 Backend communicates with OpenAI API. Frontend uses Mapbox API for map services.
 
@@ -98,7 +90,7 @@ Backend communicates with OpenAI API. Frontend uses Mapbox API for map services.
     
 *   Package manager: npm, yarn, or pnpm
     
-*   Required API keys: Mapbox Public Token, OpenAI API Key
+*   Required API keys: Mapbox Public Token, Mapbox Server Token, OpenAI API Key, Google API Key
     
 
 **⚙️ Setup Steps**
@@ -118,12 +110,6 @@ npm install
 
 npm run dev  → http://localhost:3000
 
-.env.local dosyası:
-
-NEXT\_PUBLIC\_BACKEND\_URL=http://localhost:8080
-
-NEXT\_PUBLIC\_MAPBOX\_TOKEN=
-
 ### **3) Backend (FastAPI)**
 
 cd backend
@@ -134,33 +120,15 @@ source .venv/bin/activate  (Windows: .venv\\Scripts\\activate)
 
 pip install -r requirements.txt
 
-uvicorn app.main:app –reload –port 8080  → http://localhost:8080/docs
+uvicorn main:app –reload –port 8080  → http://localhost:8080/docs
 
-.env dosyası:
-
-OPENAI\_API\_KEY=
-MAPBOX\_SECRET\_TOKEN = 
-
-### **4) MCP Bridge**
-
-cd backend/src
-
-npm install
-
-npm run dev
-
-.env dosyası:
-
-MCP\_API\_URL=
-
-MCP\_API\_KEY=
 
 **▶️ Run Flow**
 -----------------------
 
-1.  Start Backend → uvicorn app.main:app --reload
-    
-2.  Start MCP Bridge → npm run dev (inside backend/mcp-bridge)
+1.  Start Backend → uvicorn main:app --reload
+   
+2.  Start MCP → npx @modelcontextprotocol/inspector (https://mcp.turkishtechlab.com)
     
 3.  Start Frontend → npm run dev (inside frontend)
     
@@ -178,13 +146,13 @@ YolYap\_Proje/
 
 │   ├── auth/
 
-│   ├── src/
-
 │   ├── features/
 
-│   ├── types/
-
 │   └── requirements.txt
+
+│   └── main.py
+
+│   └── mcp_client.py
 
 ├── frontend/ (Next.js)
 
@@ -210,45 +178,6 @@ YolYap\_Proje/
 
 └── README.md
 
-**🌍 Environment Variables**
--------------------------
-
-Frontend (.env.local): NEXT\_PUBLIC\_BACKEND\_URL, NEXT\_PUBLIC\_MAPBOX\_TOKEN
-
-Backend (.env): OPENAI\_API\_KEY, MAPBOX\_SECRET\_TOKEN
-
-MCP Bridge (.env): MCP\_API\_URL, MCP\_API\_KEY(TOKEN)
-
-**💻 Useful Commands**
------------------------
-
-Frontend:
-
-npm install
-
-npm run dev
-
-npm run build
-
-npm start
-
-Backend:
-
-python -m venv .venv
-
-source .venv/bin/activate
-
-pip install -r requirements.txt
-
-uvicorn app.main:app –reload –port 8080
-
-MCP Bridge:
-
-cd backend/mcp-bridge
-
-npm install
-
-npm run dev
 
 **🤝 Development & Contribution**
 --------------------------
