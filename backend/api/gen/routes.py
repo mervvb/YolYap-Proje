@@ -5,17 +5,24 @@ import json
 import os
 import httpx
 import base64
+import hashlib
 from typing import Optional, Dict, Any
 from pathlib import Path
 from uuid import uuid4
 from starlette.responses import FileResponse, Response
 from math import radians, sin, cos, asin, sqrt
+from time import time as _now
+
 
 router = APIRouter()
 
+# ---- provider split: image via Gemini, text via OpenAI ----
+IMAGE_PROVIDER = "gemini"
+TEXT_PROVIDER = "openai"
+
 # Persist generated images under the project root to avoid cwd/reload mismatches
 BASE_DIR = Path(__file__).resolve().parents[3]  # …/YolYap-Proje
-IMAGES_DIR = BASE_DIR / "generated_images"
+IMAGES_DIR = BASE_DIR / "gen" / "image" / "gen_images"
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
 _MAP = {"kids": "culture", "landscape": "nature"}
@@ -83,20 +90,26 @@ def _avatar_style_prompt(selections: list[str]) -> str:
 
     # Stable avatar style baseline (English for T2I models)
     base = (
-        "flat vector, circular avatar, centered, minimal details, pastel background, clean edges, high contrast subject, "
-        "solid fills, no gradients, no shadows, no text, no watermark, no background scene, no photorealism"
+        "FLAT VECTOR HUMAN AVATAR, circular badge, front-facing bust (head & shoulders), female-presenting, "
+        "friendly cute style (rounded shapes), simple clean facial features (two eyes, small mouth), "
+        "single unified warm skin tone (no split shading, no dual colors), "
+        "pastel or soft neutral background, minimal details, subtle soft shadow. "
+        "Focus strongly on the persona’s theme and symbolic accessories. "
+        "NO text, NO watermark, NO background scene, NO luggage, NO columns, NO photorealism, NO 3D"
     )
 
     return (
         f"Color palette: {palette}. Shape language: {shape}. "
-        f"Iconic accessories: {', '.join(hints)}. {base}"
+        f"Add a very small lapel pin referencing: {', '.join(hints)} (secondary, not on the head, never the main subject). "
+        f"{base}"
     )
 
 
 # --- image persistence helpers ---
 
-def _save_bytes_as_png(data: bytes) -> str:
-    name = uuid4().hex + ".png"
+def _save_bytes_as_image(data: bytes, ext: str = "png") -> str:
+    ext = (ext or "png").lower().strip(".")
+    name = uuid4().hex + f".{ext}"
     path = IMAGES_DIR / name
     with open(path, "wb") as f:
         f.write(data)
@@ -105,8 +118,13 @@ def _save_bytes_as_png(data: bytes) -> str:
             os.fsync(f.fileno())
         except Exception:
             pass
+    if not path.exists() or path.stat().st_size == 0:
+        raise RuntimeError(f"image write failed: {path}")
     print(f"[gen-image] saved -> {path.resolve()}")
     return f"/gen/image/{name}"
+
+def _save_bytes_as_png(data: bytes) -> str:
+    return _save_bytes_as_image(data, "png")
 
 async def _ensure_local_image(url_or_data: str) -> str:
     """Accept a data URI or http(s) URL, store as PNG under IMAGES_DIR, return backend URL path."""
@@ -114,9 +132,22 @@ async def _ensure_local_image(url_or_data: str) -> str:
         raise RuntimeError("empty image data")
     if url_or_data.startswith("data:image"):
         try:
-            b64 = url_or_data.split(",", 1)[1]
-            raw = base64.b64decode(b64)
-            return _save_bytes_as_png(raw)
+            head, b64 = url_or_data.split(",", 1)
+            # mime like data:image/png;base64,...
+            mime = head[len("data:"):].split(";")[0].lower()
+            # robust decode with padding and urlsafe fallback
+            try:
+                raw = base64.b64decode(b64 + "=" * ((4 - len(b64) % 4) % 4))
+            except Exception:
+                raw = base64.urlsafe_b64decode(b64 + "=" * ((4 - len(b64) % 4) % 4))
+            ext = "png"
+            if "jpeg" in mime or "jpg" in mime:
+                ext = "jpg"
+            elif "webp" in mime:
+                ext = "webp"
+            elif "png" in mime:
+                ext = "png"
+            return _save_bytes_as_image(raw, ext)
         except Exception as e:
             raise RuntimeError(f"data uri decode failed: {e}")
     if url_or_data.startswith("http://") or url_or_data.startswith("https://"):
@@ -125,6 +156,76 @@ async def _ensure_local_image(url_or_data: str) -> str:
             r.raise_for_status()
             return _save_bytes_as_png(r.content)
     raise RuntimeError("unsupported image source")
+
+# --- inline (non-persistent) image proxy ---
+# Keeps images in memory for a short time and serves them via a stable URL, without writing to disk.
+_INLINE_CACHE: dict[str, dict] = {}
+_INLINE_TTL_SEC = 10 * 60   # 10 minutes
+_INLINE_MAX_ITEMS = 200
+
+def _parse_data_uri(data_uri: str) -> tuple[str, bytes]:
+    if not data_uri.startswith("data:image"):
+        raise RuntimeError("expected data:image/* URI")
+    try:
+        head, b64 = data_uri.split(",", 1)
+        mime = head[len("data:"):].split(";")[0] or "image/png"
+        raw = base64.b64decode(b64)
+        return mime, raw
+    except Exception as e:
+        raise RuntimeError(f"invalid data uri: {e}")
+
+def _inline_put(raw: bytes, mime: str) -> str:
+    # evict expired
+    now = _now()
+    if len(_INLINE_CACHE) >= _INLINE_MAX_ITEMS:
+        # drop oldest
+        to_drop = sorted(_INLINE_CACHE.items(), key=lambda kv: kv[1].get("ts", 0))[:50]
+        for k, _ in to_drop:
+            _INLINE_CACHE.pop(k, None)
+    # drop stale
+    stale = [k for k,v in list(_INLINE_CACHE.items()) if now - v.get("ts", 0) > _INLINE_TTL_SEC]
+    for k in stale:
+        _INLINE_CACHE.pop(k, None)
+    # use sha256 of bytes as stable id, so we can serve from disk if cache is lost
+    img_id = hashlib.sha256(raw).hexdigest()
+    _INLINE_CACHE[img_id] = {"bytes": raw, "mime": mime or "image/png", "ts": now}
+    # optional backup to disk to survive reload/worker switch
+    if os.getenv("INLINE_BACKUP_TO_DISK", "true").strip().lower() in ("1","true","yes","on"):
+        try:
+            path = IMAGES_DIR / f"{img_id}.png"
+            if not path.exists():
+                with open(path, "wb") as f:
+                    f.write(raw)
+        except Exception as e:
+            print(f"[inline] disk backup failed: {e}")
+    print(f"[inline] put id={img_id} bytes={len(raw)} path={(IMAGES_DIR / (img_id + '.png')).resolve()}")
+    return img_id
+
+def _inline_url_for(img_id: str, req: Request) -> str:
+    base = os.getenv("PUBLIC_BACKEND_URL", "").strip() or str(req.base_url).rstrip("/")
+    return f"{base}/gen/image/inline/{img_id}"
+
+@router.get("/gen/image/inline/{img_id}")
+async def get_inline_image(img_id: str):
+    item = _INLINE_CACHE.get(img_id)
+    if item:
+        return Response(
+            content=item["bytes"],
+            media_type=item["mime"],
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Cache-Control": "public, max-age=300"
+            }
+        )
+    # fallback: try disk (survives reload/process switch)
+    path = IMAGES_DIR / f"{img_id}.png"
+    if path.exists():
+        return FileResponse(path, media_type="image/png", headers={
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=3600"
+        })
+    print(f"[inline] miss id={img_id} tried={(IMAGES_DIR / (img_id + '.png')).resolve()}")
+    return Response(status_code=404, content="Not Found (inline cache)")
 # --------- OpenAI entegrasyonu (caption + tek cümle + görsel) ---------
 
 
@@ -133,12 +234,16 @@ async def _ensure_local_image(url_or_data: str) -> str:
 async def get_generated_image(name: str):
     path = IMAGES_DIR / name
     if path.exists():
-        return FileResponse(path, media_type="image/png")
+        return FileResponse(path, media_type="image/png", headers={
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=3600"
+        })
     detail = (
         "Not Found\n"
         f"name: {name}\n"
         f"tried: {path.resolve()}\n"
     )
+    print(f"[persist] miss name={name} tried={path.resolve()}")
     return Response(status_code=404, content=detail)
 
 # --- utility: list latest generated images ---
@@ -156,12 +261,46 @@ def _list_latest_images(limit: int = 5) -> list[dict[str, str]]:
         })
     return out
 
-@router.get("/gen/images/latest")
+@router.get("/images/latest")
 async def list_latest_images(limit: int = 5):
     try:
         return {"items": _list_latest_images(limit)}
     except Exception as e:
         return Response(status_code=500, content=f"error: {e}")
+
+
+# --- Gemini health/config endpoint ---
+@router.get("/health")
+async def gen_health():
+    prov_img = IMAGE_PROVIDER
+    prov_txt = TEXT_PROVIDER
+    model = os.getenv("IMAGEN_MODEL", "imagen-4.0-generate-001").strip()
+    gk = os.getenv("GOOGLE_API_KEY", "")
+    ok_g = bool(gk)
+    # mask keys
+    masked_g = (gk[:4] + "…" + gk[-4:]) if gk and len(gk) > 8 else ("" if not gk else "****")
+
+    oak = os.getenv("OPENAI_API_KEY", "")
+    ok_o = bool(oak)
+    masked_o = (oak[:4] + "…" + oak[-4:]) if oak and len(oak) > 8 else ("" if not oak else "****")
+
+    return {
+        "providers": {
+            "image": prov_img,
+            "text": prov_txt
+        },
+        "models": {
+            "imagen": model,
+            "openai_text": os.getenv("OPENAI_TEXT_MODEL", "gpt-4o-mini")
+        },
+        "keys": {
+            "google_api_key_present": ok_g,
+            "google_api_key_masked": masked_g,
+            "openai_api_key_present": ok_o,
+            "openai_api_key_masked": masked_o
+        },
+        "notes": "Image generation uses Gemini; captions/recommendations use OpenAI."
+    }
 
 def normalize(keys: list[str]) -> list[str]:
     # Map aliases, filter unknowns, keep order but unique
@@ -364,66 +503,112 @@ def _mk_candidates_from_mapbox(features: list[dict], wanted: list[str]) -> list[
 
 
 
-async def _openai_image(prompt: str) -> str:
-    """Generate an image via OpenAI Images API and return a data URI (base64).
-    Handles both b64_json and URL responses from the API.
-    """
-    api_key = _env("OPENAI_API_KEY")
-    url = "https://api.openai.com/v1/images/generations"
-    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-    # Build payload with safe quality handling
-    payload = {
-        "model": os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1"),
-        "prompt": prompt,
-        "size": os.getenv("OPENAI_IMAGE_SIZE", "512x512"),
-        # do NOT include response_format here
+async def _gemini_image(prompt: str) -> str:
+    api_key = _env("GOOGLE_API_KEY")
+    model = os.getenv("IMAGEN_MODEL", "imagen-4.0-generate-001").strip()
+
+    headers = {
+        "x-goog-api-key": api_key,
+        "Content-Type": "application/json"
     }
 
-    # Quality normalization: accept env but only pass if valid for current API
-    quality_env = os.getenv("OPENAI_IMAGE_QUALITY", "high").strip().lower()
-    # map legacy values to supported ones
-    legacy_map = {"standard": "high", "hd": "high"}
-    quality_norm = legacy_map.get(quality_env, quality_env)
-    if quality_norm in {"low", "medium", "high", "auto"}:
-        payload["quality"] = quality_norm
-    async with httpx.AsyncClient(timeout=180) as hc:
-        r = await hc.post(url, headers=headers, json=payload)
+    async def _try_predict() -> Optional[str]:
+        # Strategy A: official :predict with instances/parameters
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:predict"
+        payload = {
+            "instances": [ {"prompt": prompt} ],
+            "parameters": {"sampleCount": 1}
+        }
+        async with httpx.AsyncClient(timeout=180) as hc:
+            r = await hc.post(url, headers=headers, json=payload)
+            print(f"[gemini] A predict model={model} status={r.status_code}")
+            if r.status_code >= 400:
+                # let caller decide fallback
+                raise httpx.HTTPStatusError("predict failed", request=r.request, response=r)
+            j = r.json()
+            # common shapes
+            b64 = None
+            try:
+                preds = j.get("predictions") or []
+                if preds:
+                    b64 = preds[0].get("bytesBase64Encoded") or preds[0].get("imageBytes")
+            except Exception:
+                pass
+            if not b64:
+                try:
+                    imgs = j.get("images") or []
+                    if imgs:
+                        b64 = imgs[0].get("imageBytes")
+                except Exception:
+                    pass
+            return b64
+
+    async def _try_generate_image() -> Optional[str]:
+        # Strategy B: legacy :generateImage with {prompt:{text}} shape
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateImage"
+        payload = {
+            "prompt": {"text": prompt},
+            "sampleCount": 1,
+            "imageFormat": "png"
+        }
+        async with httpx.AsyncClient(timeout=180) as hc:
+            r = await hc.post(url, headers=headers, json=payload)
+            print(f"[gemini] B generateImage model={model} status={r.status_code}")
+            if r.status_code >= 400:
+                raise httpx.HTTPStatusError("generateImage failed", request=r.request, response=r)
+            j = r.json()
+            b64 = None
+            try:
+                imgs = j.get("images") or []
+                if imgs:
+                    b64 = imgs[0].get("imageBytes")
+            except Exception:
+                pass
+            if not b64:
+                try:
+                    gi = j.get("generatedImages") or []
+                    if gi:
+                        img = gi[0].get("image") or {}
+                        b64 = img.get("imageBytes")
+                except Exception:
+                    pass
+            return b64
+
+    # Try A then B, collect last error for diagnostics
+    last_err: Optional[str] = None
+    for attempt, fn in (("A", _try_predict), ("B", _try_generate_image)):
         try:
-            r.raise_for_status()
+            b64 = await fn()
+            if b64:
+                return f"data:image/png;base64,{b64}"
         except httpx.HTTPStatusError as e:
-            detail = e.response.text[:500]
-            raise RuntimeError(f"OpenAI image failed: {e.response.status_code} {detail}")
-        j = r.json()
-        data = (j.get("data") or [{}])[0]
+            body = e.response.text[:500] if e.response is not None else str(e)
+            last_err = f"{attempt}:{e.response.status_code if e.response else 'NA'} {body}"
+            print(f"[gemini][error] {last_err}")
+        except Exception as e:
+            last_err = f"{attempt}: {str(e)[:300]}"
+            print(f"[gemini][error] {last_err}")
 
-        # Prefer base64 if provided
-        b64 = data.get("b64_json")
-        if b64:
-            return f"data:image/png;base64,{b64}"
+    raise RuntimeError(f"Gemini image failed (both strategies). last={last_err}")
 
-        # Fallback: download from URL and convert to base64
-        img_url = data.get("url")
-        if img_url:
-            rr = await hc.get(img_url)
-            rr.raise_for_status()
-            encoded = base64.b64encode(rr.content).decode("ascii")
-            return f"data:image/png;base64,{encoded}"
 
-        raise RuntimeError(f"OpenAI image: unexpected response {j}")
-
+# --- Provider switch for image generation ---
 async def _generate_image_by_provider(prompt: str) -> str:
-    # Only OpenAI is supported now
-    return await _openai_image(prompt)
+    """Provider switch for image generation. Currently pinned to Gemini (Imagen)."""
+    return await _gemini_image(prompt)
+
+
 
 async def _openai_caption_line(tagline: str, selections: list[str]) -> Dict[str, str]:
     """Ask OpenAI for caption/line/avatar_prompt and return as dict."""
     api_key = _env("OPENAI_API_KEY")
     persona_txt = ", ".join(selections) if selections else "genel gezgin"
     sys_prompt = (
-        "You are an imaginative brand designer who creates symbolic travel avatars. "
-        "Always return strict JSON with keys caption, line, avatar_prompt. "
-        "avatar_prompt must be in concise English describing a FLAT VECTOR CIRCULAR AVATAR that represents the user's persona(s). "
-        "Prefer iconic accessories over text, pastel background, minimal details, no photorealism, no watermark."
+        "You are an imaginative brand designer AI system. Create prompts for a PERSON avatar. "
+        "Always respond strictly in JSON with keys caption, line, avatar_prompt. "
+        "The avatar_prompt must describe a FLAT VECTOR CIRCULAR **HUMAN** AVATAR (front‑facing bust), **female‑presenting**, cute friendly style,"
+        " consistent warm medium‑light skin tone, minimal facial features, pastel background. "
+        "Explicitly exclude objects as the main subject (no luggage, no columns), no text, no watermark, no background scene, no photorealism."
     )
     user_prompt = (
         "Kullanıcı seyahat kişiselleştirme görevi.\n"
@@ -463,6 +648,8 @@ async def _openai_caption_line(tagline: str, selections: list[str]) -> Dict[str,
         cap = str(parsed.get("caption", "")).strip()
         line = str(parsed.get("line", "")).strip()
         avp = str(parsed.get("avatar_prompt", "")).strip()
+        if avp:
+            avp += "; female-presenting human avatar; friendly cute style; consistent warm medium-light skin tone; front-facing bust; no objects as main subject; no text"
         if not cap:
             cap = tagline[:40]
         if not line:
@@ -470,7 +657,10 @@ async def _openai_caption_line(tagline: str, selections: list[str]) -> Dict[str,
     except Exception:
         cap = tagline[:40]
         line = tagline
-        avp = ""
+        avp = (
+            f"flat vector circular HUMAN avatar, female-presenting; friendly cute style; front-facing bust; minimal facial features; "
+            f"consistent warm medium-light skin tone; pastel background; no objects as main subject; no text; no watermark"
+        )
     return {"caption": cap, "line": line, "avatar_prompt": avp}
 
 async def _openai_personal_reco(tagline: str, selections: list[str], items: list[dict]) -> str:
@@ -571,8 +761,13 @@ async def _openai_personal_reco(tagline: str, selections: list[str], items: list
     return {"caption": cap, "line": line, "avatar_prompt": avp}
 
 
-@router.post("/generate")
+
+
+
+@router.post("/gen/generate")
 async def persona_generate(body: GenIn, req: Request):
+    image_url = ""
+    error_msg = ""
     # 1) selections: body'den; yoksa kayıttan
     selections = body.selections
     if selections is None:
@@ -598,23 +793,25 @@ async def persona_generate(body: GenIn, req: Request):
     avatar_prompt = text.get("avatar_prompt") or f"travel persona icon for: {', '.join(selections) or 'general traveler'}"
     full_avatar_prompt = f"{avatar_prompt}. {style_suffix}"
 
-    # 4) Replicate ile görsel
-    # Default to inline data URI (no disk write) unless IMAGE_PERSIST is explicitly enabled
-    persist = os.getenv("IMAGE_PERSIST", "false").strip().lower() in ("1", "true", "yes", "on")
+    # 4) Görsel üretimi (Gemini) ve kalıcı dosyaya yazma
+    image_url = ""
+    error_msg = ""
     try:
         tmp_image = await _generate_image_by_provider(full_avatar_prompt)
-        if persist:
+        # data URI ise her zaman diske yaz ve /gen/image/<name> URL'si döndür
+        if isinstance(tmp_image, str) and tmp_image.startswith("data:image"):
             image_url = await _ensure_local_image(tmp_image)
         else:
-            image_url = tmp_image
+            image_url = str(tmp_image)
+        # absolute URL yap
+        base = os.getenv("PUBLIC_BACKEND_URL", "").rstrip("/")
+        if base and isinstance(image_url, str) and image_url.startswith("/"):
+            image_url = f"{base}{image_url}"
     except Exception as e:
-        # Soft-fail: görsel olmadan metinleri döndür, HTTP 200 kalsın
-        image_url = ""
-        err = str(e)
-        # kullanıcının göreceği kısa hata özeti (maks 160 karakter)
-        line = f"{line} (Görsel üretimi başarısız: {err[:160]})"
-        # Not: burada raise ETME; UI metinleri gösterebilsin
-        pass
+        error_msg = f"image generate failed: {str(e)[:180]}"
+        print(f"[gen-image][error] {error_msg}")
+
+   
 
     # 5) İsteğe bağlı: konuma göre LLM önerileri
     blurb = None
@@ -638,6 +835,7 @@ async def persona_generate(body: GenIn, req: Request):
         "image_url": image_url,
         "blurb": blurb,
         "items": items,
+        "error": error_msg,
     }
 
 
@@ -784,7 +982,7 @@ async def _recommend_places_llm_core(lat: float, lon: float, selections: list[st
 # --------- LLM-backed recommendation endpoint ---------
 
  # Not: radius_km <= 0 gönderirsen Türkiye geneli (nationwide) çalışır.
-@router.post("/places/recommend_llm")
+@router.post("/gen/places/recommend_llm")
 async def places_recommend_llm(body: RecommendLLMIn, req: Request):
     try:
         print(f"[places] POST /places/recommend_llm lat={body.lat} lon={body.lon} sel={body.selections} r={body.radius_km} l={body.limit}")
