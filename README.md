@@ -1,4 +1,4 @@
-**🗺️ YolYap Project **
+**🗺️ YolYap Project**
 ======================================================
 
 <img width="1215" height="837" alt="Ekran Resmi 2025-08-21 21 59 19" src="https://github.com/user-attachments/assets/586e79ca-a28f-452a-8d1e-a2657ac3d8ba" />
